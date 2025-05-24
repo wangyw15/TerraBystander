@@ -56,7 +56,7 @@
   ACTIVITY_STORY: "SideStory",
   MAIN_STORY: "MainLine",
   MINI_STORY: "MiniStory",
-  NONE: "Others",
+  NONE: "OperatorRecords",
 )
 
 // data
@@ -205,7 +205,7 @@
 #pagebreak()
 #show_entries(mini_stories)
 
-= Others
+= OperatorRecords
 #entries_outline(other_stories)
 #pagebreak()
 #show_entries(other_stories)
