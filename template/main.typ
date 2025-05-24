@@ -1,9 +1,10 @@
-// layout
-#set page(numbering: "1", margin: (x: 2cm, y: 2cm))
-#let name_width = 10em
-#let name_spacing = 1.5em
+// layout and style
+#set page(
+  "a5",
+  numbering: "1",
+  margin: (x: 1.75cm, y: 2.75cm),
+)
 
-// style
 #set text(
   font: (
     (name: "Times New Roman", covers: "latin-in-cjk"),
@@ -11,7 +12,8 @@
   ),
   lang: "zh",
   region: "cn",
-  weight: "regular"
+  weight: "regular",
+  size: 10.5pt,
 )
 
 #set par(justify: true, spacing: 1.3em, leading: 1.3em)
@@ -23,7 +25,10 @@
 
 #show heading.where(level: 2): it => {
   set text(size: 3em, font: "FangSong")
-  stack(dir: ttb, spacing: 0.5em, ..it.body.text.split(""))
+  let chars = it.body.text.split("")
+  // chars.remove(0)
+  // chars.remove(-1)
+  stack(dir: ttb, spacing: 0.5em, ..chars)
 }
 
 #show heading.where(level: 3): it => box(height: 20%, width: 100%,
@@ -39,7 +44,7 @@
 #show regex("<.+?>"): none
 
 // functions for render
-#let desc(content) = {
+#let description(content) = {
   if content != "" {
     box(width: 100%, inset: 2em,
       {
@@ -49,6 +54,14 @@
       }
     )
   }
+}
+
+#let sub_heading(content) = {
+  rotate(90deg, origin: top + left, reflow: true, {
+    set text(size: 2em)
+    h(2em)
+    smallcaps(content)
+  })
 }
 
 // property map
@@ -82,20 +95,21 @@
 
 #let show_entries(entries) = {
   for entry in entries {
-    // chapter cover
-    align(right, {
-      set text(size: 3em)
-      smallcaps(entry_type.at(entry.activity_type))
-    })
-
     stack(
       dir: ltr,
-      h(1fr),
+      h(1em),
+      sub_heading(entry.secondary_name),
       heading(level: 2, entry.name),
-      h(3fr),
-      // entry outline
-      box(width: 50%, height: 90%,
-        align(bottom, {
+      h(1fr),
+      {
+        // entry type
+        align(top + right, {
+          set text(size: 3em)
+          smallcaps(entry_type.at(entry.activity_type))
+        })
+      
+        // entry outline
+        align(right + bottom,
           context {
             set text(size: 1em)
 
@@ -113,18 +127,19 @@
                   "1",
                   ..counter(page).at(location),
                 )
+
                 link(location, stack(dir: ltr,
                   box(width: 5em, align(right, story.code)),
                   h(1em),
-                  box(width: 12em, target.body),
-                  h(1fr),
-                  box(width: 2em, number),
+                  box(width: 10em, align(left, target.body)),
+                  h(1em),
+                  box(width: 2em, align(right, number)),
                 ))
               }
             }
           }
-        })
-      )
+        )
+      }
     )
 
     pagebreak()
@@ -133,6 +148,7 @@
     let last_name = ""
     for story in entry.stories {
       let new_story = last_name == "" or story.name != last_name
+
       set page(header: {
         set text(fill: luma(50%))
         box(width: 1fr, align(left, entry.name))
@@ -143,15 +159,24 @@
       if new_story {
         last_name = story.name
         heading(level: 3, story.name)
-        desc(story.description)
+        description(story.description)
       }
+
       heading(level: 4, story.avg_tag)
+
+      let name_width = 8em
+      let name_spacing = 1em
 
       for line in story.texts {
         par(hanging-indent: name_width + name_spacing, {
           box(width: name_width, align(right, text(weight: "bold", line.name)))
           h(name_spacing)
-          line.text
+          if line.name != "" {
+            line.text
+          }
+          else {
+            box(skew(ax: -15deg, text(fill: luma(40%), weight: "semibold", line.text)))
+          }
         })
       }
 
