@@ -84,7 +84,7 @@
 )
 
 // data
-#let entries = json("data.full.json")
+#let entries = json("data.json")
 #let side_stories = ()
 #let main_stories = ()
 #let mini_stories = ()
@@ -180,16 +180,19 @@
       let name_spacing = 1em
 
       for line in story.texts {
-        par(hanging-indent: name_width + name_spacing, {
-          box(width: name_width, align(right, text(weight: "bold", line.name)))
-          h(name_spacing)
-          if line.name != "" {
+        if line.name == "" {
+          par(first-line-indent: name_width + name_spacing,
+              hanging-indent: name_width + name_spacing - 2em,
+              narrator(line.text)
+          )
+        }
+        else {
+          par(hanging-indent: name_width + name_spacing, {
+            box(width: name_width, align(right, text(weight: "bold", line.name)))
+            h(name_spacing)
             line.text
-          }
-          else {
-            narrator(line.text)
-          }
-        })
+          })
+        }
       }
 
       if new_story {
