@@ -84,6 +84,7 @@ class ActorLine:
 @dataclass
 class Story:
     name: str
+    secondary_name: str
     code: str
     avg_tag: str
     description: str
@@ -93,6 +94,7 @@ class Story:
 @dataclass
 class Entry:
     name: str
+    secondary_name: str
     entry_type: EntryType
     activity_type: ActivityType
     stories: list[Story]

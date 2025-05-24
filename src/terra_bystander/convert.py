@@ -15,8 +15,17 @@ from .parser import ArknightsStoryParser
 
 
 class GameDataReader:
-    def __init__(self, gamedata_path: str | Path, nickname: str = "Doctor"):
+    def __init__(
+        self,
+        gamedata_path: str | Path,
+        secondary_gamedata_path: str | Path | None = None,
+        nickname: str = "Doctor",
+    ):
         self.path = Path(gamedata_path)
+        if secondary_gamedata_path is not None and secondary_gamedata_path != "":
+            self.secondary_path = Path(secondary_gamedata_path)
+        else:
+            self.secondary_path = None
         self.nickname = nickname
 
     def _apply_template(self, template: str) -> str:
@@ -68,6 +77,14 @@ class GameDataReader:
         ) as f:
             retro_table: dict[str, Any] = json.load(f)
 
+        if self.secondary_path is not None:
+            with (self.secondary_path / "excel" / "story_review_table.json").open(
+                "r", encoding="utf-8"
+            ) as f:
+                secondary_story_review_table: dict[str, Any] = json.load(f)
+        else:
+            secondary_story_review_table = {}
+
         for _, entry in story_review_table.items():
             stories: list[Story] = []
 
@@ -90,9 +107,20 @@ class GameDataReader:
                             desc = desc.split("\\n")[0]
                             descriptions.append(desc)
 
+                # fetch secondary name
+                secondary_story_name: str = ""
+                if entry["id"] in secondary_story_review_table:
+                    for secondary_story in secondary_story_review_table[entry["id"]][
+                        "infoUnlockDatas"
+                    ]:
+                        if secondary_story["storyId"] == story["storyId"]:
+                            secondary_story_name = secondary_story["storyName"]
+                            break
+
                 stories.append(
                     Story(
                         name=story["storyName"],
+                        secondary_name=secondary_story_name,
                         code=story["storyCode"],
                         avg_tag=story["avgTag"],
                         description="\n".join(descriptions),
@@ -100,9 +128,14 @@ class GameDataReader:
                     )
                 )
 
+            # fetch secondary name
+            secondary_entry_name: str = ""
+            if entry["id"] in secondary_story_review_table:
+                secondary_entry_name = secondary_story_review_table[entry["id"]]["name"]
             entries.append(
                 Entry(
                     name=entry["name"],
+                    secondary_name=secondary_entry_name,
                     entry_type=EntryType(entry["entryType"]),
                     activity_type=ActivityType(entry["actType"]),
                     stories=stories,
