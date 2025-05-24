@@ -135,11 +135,9 @@
       let new_story = last_name == "" or story.name != last_name
       set page(header: {
         set text(fill: luma(50%))
-        entry.name
-        h(1fr)
-        "泰拉观者"
-        h(1fr)
-        story.code
+        box(width: 1fr, align(left, entry.name))
+        box(width: 1fr, align(center)[泰拉观者])
+        box(width: 1fr, align(right, story.code))
       })
 
       if new_story {
