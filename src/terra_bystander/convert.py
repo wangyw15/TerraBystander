@@ -72,10 +72,10 @@ class GameDataReader:
             story_review_table: dict[str, Any] = json.load(f)
 
         # for description
-        with (self.path / "excel" / "retro_table.json").open(
+        with (self.path / "excel" / "stage_table.json").open(
             "r", encoding="utf-8"
         ) as f:
-            retro_table: dict[str, Any] = json.load(f)
+            stage_table: dict[str, Any] = json.load(f)
 
         if self.secondary_path is not None:
             with (self.secondary_path / "excel" / "story_review_table.json").open(
@@ -97,15 +97,16 @@ class GameDataReader:
                 if "requiredStages" in story and story["requiredStages"] is not None:
                     for stage in story["requiredStages"]:
                         if (
-                            stage["stageId"] in retro_table["stageList"]
+                            stage["stageId"] in stage_table["stages"]
                             and "description"
-                            in retro_table["stageList"][stage["stageId"]]
+                            in stage_table["stages"][stage["stageId"]]
                         ):
-                            desc: str = retro_table["stageList"][stage["stageId"]][
+                            desc: str = stage_table["stages"][stage["stageId"]][
                                 "description"
                             ]
-                            desc = desc.split("\\n")[0]
-                            descriptions.append(desc)
+                            if desc is not None:
+                                desc = desc.split("\\n")[0]
+                                descriptions.append(desc)
 
                 # fetch secondary name
                 secondary_story_name: str = ""
