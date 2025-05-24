@@ -86,6 +86,7 @@ class Story:
     name: str
     code: str
     avg_tag: str
+    description: str
     texts: list[ActorLine]
 
 

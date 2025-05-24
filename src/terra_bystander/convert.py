@@ -8,8 +8,8 @@ from .model import (
     ActorLine,
     Entry,
     EntryType,
-    Story,
     Property,
+    Story,
 )
 from .parser import ArknightsStoryParser
 
@@ -45,8 +45,16 @@ def read_entries(gamedata_path: str | Path) -> list[Entry]:
 
     entries: list[Entry] = []
 
-    with (gamedata_path / "excel" / "story_review_table.json").open("r", encoding="utf-8") as f:
+    with (gamedata_path / "excel" / "story_review_table.json").open(
+        "r", encoding="utf-8"
+    ) as f:
         story_review_table: dict[str, Any] = json.load(f)
+
+    # for description
+    with (gamedata_path / "excel" / "retro_table.json").open(
+        "r", encoding="utf-8"
+    ) as f:
+        retro_table: dict[str, Any] = json.load(f)
 
     for _, entry in story_review_table.items():
         stories: list[Story] = []
@@ -55,18 +63,35 @@ def read_entries(gamedata_path: str | Path) -> list[Entry]:
             story_path = gamedata_path / f"story/{story['storyTxt']}.txt"
             with story_path.open("r", encoding="utf-8") as f:
                 texts = convert_story_text(f.read())
-            stories.append(Story(
-                name=story["storyName"],
-                code=story["storyCode"],
-                avg_tag=story["avgTag"],
-                texts=texts,
-            ))
 
-        entries.append(Entry(
-            name=entry["name"],
-            entry_type=EntryType(entry["entryType"]),
-            activity_type=ActivityType(entry["actType"]),
-            stories=stories,
-        ))
+            descriptions: list[str] = []
+            if "requiredStages" in story and story["requiredStages"] is not None:
+                for stage in story["requiredStages"]:
+                    if (
+                        stage["stageId"] in retro_table["stageList"]
+                        and "description" in retro_table["stageList"][stage["stageId"]]
+                    ):
+                        descriptions.append(
+                            retro_table["stageList"][stage["stageId"]]["description"]
+                        )
+
+            stories.append(
+                Story(
+                    name=story["storyName"],
+                    code=story["storyCode"],
+                    avg_tag=story["avgTag"],
+                    description="\n".join(descriptions),
+                    texts=texts,
+                )
+            )
+
+        entries.append(
+            Entry(
+                name=entry["name"],
+                entry_type=EntryType(entry["entryType"]),
+                activity_type=ActivityType(entry["actType"]),
+                stories=stories,
+            )
+        )
 
     return entries
