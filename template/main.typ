@@ -32,6 +32,10 @@
   )
 )
 
+#show heading.where(level: 4): it => align(center,
+  text(weight: "bold", size: 1.2em, it.body)
+)
+
 // functions for render
 #let desc(content) = {
   box(width: 100%, inset: 2em,
@@ -91,23 +95,29 @@
         align(bottom, {
           context {
             set text(size: 1em)
+
+            let last_name = ""
             for story in entry.stories {
-              let target = query(
-                heading.where(level: 3,
-                body: [#(story.name + "（" + story.avg_tag + "）")])
-              ).at(0)
-              let location = target.location()
-              let number = numbering(
-                "1",
-                ..counter(page).at(location),
-              )
-              link(location, stack(dir: ltr,
-                box(width: 5em, align(right, story.code)),
-                h(1em),
-                box(width: 12em, target.body),
-                h(1fr),
-                box(width: 2em, number),
-              ))
+              if last_name == "" or story.name != last_name {
+                last_name = story.name
+
+                let target = query(
+                  heading.where(level: 3,
+                  body: [#story.name])
+                ).at(0)
+                let location = target.location()
+                let number = numbering(
+                  "1",
+                  ..counter(page).at(location),
+                )
+                link(location, stack(dir: ltr,
+                  box(width: 5em, align(right, story.code)),
+                  h(1em),
+                  box(width: 12em, target.body),
+                  h(1fr),
+                  box(width: 2em, number),
+                ))
+              }
             }
           }
         })
@@ -117,7 +127,9 @@
     pagebreak()
 
     // content
+    let last_name = ""
     for story in entry.stories {
+      let new_story = last_name == "" or story.name != last_name
       set page(header: {
         set text(fill: luma(50%))
         entry.name
@@ -127,8 +139,12 @@
         story.code
       })
 
-      heading(level: 3, story.name + "（" + story.avg_tag + "）")
-      desc(story.description)
+      if new_story {
+        last_name = story.name
+        heading(level: 3, story.name)
+        desc(story.description)
+      }
+      heading(level: 4, story.avg_tag)
       v(1em)
 
       for line in story.texts {
@@ -138,12 +154,15 @@
           line.text
         })
       }
-      pagebreak()
+
+      if new_story {
+        pagebreak()
+      }
     }
   }
 }
 
-= 泰拉观者
+#heading(outlined: false, "泰拉观者")
 #pagebreak()
 #outline(title: "", target: heading.where(level: 1))
 #pagebreak()
