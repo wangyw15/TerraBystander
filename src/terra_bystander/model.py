@@ -60,7 +60,21 @@ class ScriptLine:
     actor_text: str | None
 
 
-# Convert
+# Game data
+class EntryType(Enum):
+    ACTIVITY = "ACTIVITY"
+    MAINLINE = "MAINLINE"
+    MINI_ACTIVITY = "MINI_ACTIVITY"
+    NONE = "NONE"
+
+
+class ActivityType(Enum):
+    ACTIVITY_STORY = "ACTIVITY_STORY"
+    MAIN_STORY = "MAIN_STORY"
+    MINI_STORY = "MINI_STORY"
+    NONE = "NONE"
+
+
 @dataclass
 class ActorLine:
     name: str
@@ -68,19 +82,25 @@ class ActorLine:
 
 
 @dataclass
-class Passage:
-    title: str
-    content: list[ActorLine]
+class Story:
+    name: str
+    code: str
+    avg_tag: str
+    texts: list[ActorLine]
 
 
 @dataclass
-class Chapter:
-    title: str
-    passages: list[Passage]
+class Entry:
+    name: str
+    entry_type: EntryType
+    activity_type: ActivityType
+    stories: list[Story]
 
 
 class ScriptJsonEncoder(JSONEncoder):
     def default(self, o: Any) -> Any:
-        if isinstance(o, ActorLine) or isinstance(o, Passage) or isinstance(o, Chapter):
+        if isinstance(o, ActorLine) or isinstance(o, Story) or isinstance(o, Entry):
             return asdict(o)
+        if isinstance(o, Enum):
+            return o.value
         return super().default(o)
