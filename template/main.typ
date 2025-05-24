@@ -24,7 +24,7 @@
 }
 
 #show heading.where(level: 2): it => {
-  set text(size: 3em, font: "FangSong")
+  set text(size: 2.5em, font: "FangSong")
   let chars = it.body.text.split("")
   // chars.remove(0)
   // chars.remove(-1)
@@ -41,7 +41,12 @@
   text(weight: "bold", size: 1.2em, it.body)
 )
 
-#show regex("<.+?>"): none
+// #show regex("<.+?>"): none
+#let re = regex("<color=#(\S+?)>(.*?)</color>")
+#show re: it => {
+  let (c, t) = it.text.match(re).captures
+  text(fill: rgb(c), t)
+}
 
 // functions for render
 #let description(content) = {
@@ -59,9 +64,15 @@
 #let sub_heading(content) = {
   rotate(90deg, origin: top + left, reflow: true, {
     set text(size: 2em)
-    h(2em)
+    h(1.5em)
     smallcaps(content)
   })
+}
+
+#let narrator(body) = {
+  for char in body.split("") {
+    box(skew(ax: -15deg, text(fill: luma(40%), weight: "semibold", char)))
+  }
 }
 
 // property map
@@ -73,7 +84,7 @@
 )
 
 // data
-#let entries = json("data.json")
+#let entries = json("data.full.json")
 #let side_stories = ()
 #let main_stories = ()
 #let mini_stories = ()
@@ -99,6 +110,7 @@
       dir: ltr,
       h(1em),
       sub_heading(entry.secondary_name),
+      h(1em),
       heading(level: 2, entry.name),
       h(1fr),
       {
@@ -128,13 +140,13 @@
                   ..counter(page).at(location),
                 )
 
-                link(location, stack(dir: ltr,
+                link(location, box(stack(dir: ltr,
                   box(width: 5em, align(right, story.code)),
                   h(1em),
                   box(width: 10em, align(left, target.body)),
                   h(1em),
                   box(width: 2em, align(right, number)),
-                ))
+                )))
               }
             }
           }
@@ -175,7 +187,7 @@
             line.text
           }
           else {
-            box(skew(ax: -15deg, text(fill: luma(40%), weight: "semibold", line.text)))
+            narrator(line.text)
           }
         })
       }
