@@ -16,6 +16,11 @@
 
 #set par(justify: true, spacing: 1.3em, leading: 1.3em)
 
+#show heading.where(level: 1): it => {
+  set text(weight: "regular")
+  smallcaps(it.body)
+}
+
 #show heading.where(level: 2): it => {
   set text(size: 3em, font: "FangSong")
   stack(dir: ttb, spacing: 0.5em, ..it.body.text.split(""))
@@ -44,13 +49,32 @@
   ACTIVITY_STORY: "SideStory",
   MAIN_STORY: "MainLine",
   MINI_STORY: "MiniStory",
-  NONE: "None",
+  NONE: "Others",
 )
 
+#let entries = json("data.json")
+#let side_stories = ()
+#let main_stories = ()
+#let mini_stories = ()
+#let other_stories = ()
+#for entry in entries {
+  if entry.activity_type == "ACTIVITY_STORY" {
+    side_stories.push(entry)
+  }
+  else if entry.activity_type == "MAIN_STORY" {
+    main_stories.push(entry)
+  }
+  else if entry.activity_type == "MINI_STORY" {
+    mini_stories.push(entry)
+  }
+  else if entry.activity_type == "NONE" {
+    other_stories.push(entry)
+  }
+}
+
 // content
-#{
-  let data = json("data.json")
-  for entry in data {
+#let show_entries(entries) = {
+  for entry in entries {
     // chapter cover
     align(right, {
       set text(size: 3em)
@@ -62,8 +86,9 @@
       h(1fr),
       heading(level: 2, entry.name),
       h(3fr),
-       box(width: 50%, height: 90%,
-         align(bottom, {
+      // entry outline
+      box(width: 50%, height: 90%,
+        align(bottom, {
           context {
             set text(size: 1em)
             for story in entry.stories {
@@ -117,3 +142,24 @@
     }
   }
 }
+
+= 泰拉观者
+#pagebreak()
+#outline(title: "", target: heading.where(level: 1))
+#pagebreak()
+
+= MainLine
+#pagebreak()
+#show_entries(main_stories)
+
+= SideStory
+#pagebreak()
+#show_entries(side_stories)
+
+= MiniStory
+#pagebreak()
+#show_entries(mini_stories)
+
+= Others
+#pagebreak()
+#show_entries(other_stories)
