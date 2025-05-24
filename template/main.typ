@@ -36,18 +36,21 @@
   text(weight: "bold", size: 1.2em, it.body)
 )
 
+#show regex("<.+?>"): none
+
 // functions for render
 #let desc(content) = {
-  box(width: 100%, inset: 2em,
-    {
-      set par(spacing: 1em, leading: 1em)
-      h(2em)
-      text(font: "FangSong", content)
-    }
-  )
+  if content != "" {
+    box(width: 100%, inset: 2em,
+      {
+        set par(spacing: 1em, leading: 1em)
+        h(2em)
+        text(font: "FangSong", content)
+      }
+    )
+  }
 }
 
-// data
 // property map
 #let entry_type = (
   ACTIVITY_STORY: "SideStory",
@@ -56,6 +59,7 @@
   NONE: "Others",
 )
 
+// data
 #let entries = json("data.json")
 #let side_stories = ()
 #let main_stories = ()
@@ -76,7 +80,6 @@
   }
 }
 
-// content
 #let show_entries(entries) = {
   for entry in entries {
     // chapter cover
@@ -145,7 +148,6 @@
         desc(story.description)
       }
       heading(level: 4, story.avg_tag)
-      v(1em)
 
       for line in story.texts {
         par(hanging-indent: name_width + name_spacing, {
@@ -162,23 +164,48 @@
   }
 }
 
+#let entries_outline(entries) = {
+  context {
+    for entry in entries {
+      let target = query(
+        heading.where(level: 2,
+        body: [#entry.name])
+      ).at(0)
+      let location = target.location()
+      let number = numbering(
+        "1",
+        ..counter(page).at(location),
+      )
+      link(location, stack(dir: ltr,
+        box(width: 12em, target.body),
+        h(1fr),
+        box(width: 2em, number),
+      ))
+    }
+  }
+}
+
 #heading(outlined: false, "泰拉观者")
 #pagebreak()
 #outline(title: "", target: heading.where(level: 1))
 #pagebreak()
 
 = MainLine
+#entries_outline(main_stories)
 #pagebreak()
 #show_entries(main_stories)
 
 = SideStory
+#entries_outline(side_stories)
 #pagebreak()
 #show_entries(side_stories)
 
 = MiniStory
+#entries_outline(mini_stories)
 #pagebreak()
 #show_entries(mini_stories)
 
 = Others
+#entries_outline(other_stories)
 #pagebreak()
 #show_entries(other_stories)
