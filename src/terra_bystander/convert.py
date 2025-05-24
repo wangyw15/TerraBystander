@@ -71,8 +71,10 @@ def read_entries(gamedata_path: str | Path) -> list[Entry]:
                         stage["stageId"] in retro_table["stageList"]
                         and "description" in retro_table["stageList"][stage["stageId"]]
                     ):
+                        desc: str = retro_table["stageList"][stage["stageId"]]["description"]
+                        desc = desc.split("\\n")[0]
                         descriptions.append(
-                            retro_table["stageList"][stage["stageId"]]["description"]
+                            desc
                         )
 
             stories.append(
