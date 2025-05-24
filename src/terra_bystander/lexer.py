@@ -24,10 +24,19 @@ class Tokenizer:
 
     @staticmethod
     def tokenize(code_line: str) -> list[Token]:
+        try:
+            return Tokenizer._tokenize(code_line)
+        except:
+            print(f"Error at: {code_line}")
+            raise
+
+    @staticmethod
+    def _tokenize(code_line: str) -> list[Token]:
         tokens: list[Token] = []
 
         tmp: str = ""
         status: TokenType | None = None
+        remain_bracket_count = 0
 
         def push_token(token_type: TokenType, value: str = "") -> None:
             tokens.append(Token(token_type, value))
@@ -86,10 +95,13 @@ class Tokenizer:
             if char == TokenType.LEFT_BRACKET.value:
                 push_identifier()
                 push_token(TokenType.LEFT_BRACKET, char)
+                remain_bracket_count += 1
             elif char == TokenType.RIGHT_BRACKET.value:
                 push_identifier()
                 push_token(TokenType.RIGHT_BRACKET, char)
-                status = TokenType.ACTOR_TEXT
+                remain_bracket_count -= 1
+                if remain_bracket_count == 0:
+                    status = TokenType.ACTOR_TEXT
 
             elif char == TokenType.LEFT_PARENTHESIS.value:
                 push_identifier()

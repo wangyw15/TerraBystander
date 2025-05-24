@@ -15,8 +15,10 @@ class ArknightsStoryParser:
 
     def parse(self) -> ScriptLine:
         try:
-            return ScriptLine(self._actions(), self._actor_text())
+            return ScriptLine(self._expression(), self._actor_text())
         except:
+            print(f"Token index: {self._index}")
+            print(f"Current token: {self._current_token}")
             print("Tokens:")
             for t in self.tokens:
                 print(f"{t.type} {t.value}")
@@ -133,6 +135,11 @@ class ArknightsStoryParser:
             return ret
         return None
 
+    def _boundary(self) -> bool:
+        if self._comma() or self._right_bracket() or self._right_parenthesis():
+            return True
+        return False
+
     def _property(self) -> Property | None:
         key = self._identifier()
         if key is None:
@@ -158,13 +165,7 @@ class ArknightsStoryParser:
                 value = int(self._current_token.value)
             self._index += 1
 
-        elif self._comma():
-            self._index -= 1
-            value = None
-        elif self._right_bracket():
-            self._index -= 1
-            value = None
-        elif self._right_parenthesis():
+        elif self._boundary():
             self._index -= 1
             value = None
 
@@ -178,12 +179,15 @@ class ArknightsStoryParser:
         if name is None:
             return None
 
+        with_equal = self._equal()
+
         if not self._left_parenthesis():
-            if self._assign():
-                self._index -= 2
-                return None
-            else:
+            if self._boundary():
+                self._index -= 1
                 return Call(name)
+            else:
+                self._index -= 1 + (1 if with_equal else 0)
+                return None
 
         parameters: list[Property] = []
         while True:
@@ -201,15 +205,26 @@ class ArknightsStoryParser:
         return Call(name, parameters)
 
     def _actions(self) -> list[ActionBase] | None:
-        if not self._left_bracket():
-            return None
-
         actions: list[ActionBase] = []
         if c := self._call():
             actions.append(c)
         else:
-            while p := self._property():
+            while True:
+                p = self._property()
+                if p is None:
+                    break
                 actions.append(p)
+
+                if not self._comma():
+                    break
+
+        return actions if len(actions) > 0 else None
+
+    def _expression(self) -> list[ActionBase] | None:
+        if not self._left_bracket():
+            return self._actions()
+
+        actions = self._expression()
 
         if not self._right_bracket():
             raise SyntaxError("The left bracket is never closed.")
