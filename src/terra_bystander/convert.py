@@ -6,6 +6,7 @@ from .lexer import Tokenizer
 from .model import (
     ActivityType,
     ActorLine,
+    Call,
     Entry,
     EntryType,
     Property,
@@ -58,6 +59,14 @@ class GameDataReader:
                         ActorLine(
                             action.value,
                             text,
+                        )
+                    )
+                    break
+                if isinstance(action, Call) and action.name.lower() == "background":
+                    lines.append(
+                        ActorLine(
+                            "",
+                            "",
                         )
                     )
                     break
