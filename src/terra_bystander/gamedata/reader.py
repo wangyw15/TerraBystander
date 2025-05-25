@@ -2,20 +2,22 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .lexer import Tokenizer
+from ..script import (
+    Call,
+    Parser,
+    Property,
+    Tokenizer,
+)
 from .model import (
     ActivityType,
     ActorLine,
-    Call,
     Entry,
     EntryType,
-    Property,
     Story,
 )
-from .parser import ArknightsStoryParser
 
 
-class GameDataReader:
+class Reader:
     def __init__(
         self,
         gamedata_path: str | Path,
@@ -38,9 +40,7 @@ class GameDataReader:
 
     def _convert_story_text(self, raw_text: str) -> list[ActorLine]:
         raw_lines = Tokenizer.split_code_lines(raw_text)
-        ast_lines = [
-            ArknightsStoryParser(Tokenizer.tokenize(line)).parse() for line in raw_lines
-        ]
+        ast_lines = [Parser(Tokenizer.tokenize(line)).parse() for line in raw_lines]
 
         lines: list[ActorLine] = []
         for line in ast_lines:
@@ -107,8 +107,7 @@ class GameDataReader:
                     for stage in story["requiredStages"]:
                         if (
                             stage["stageId"] in stage_table["stages"]
-                            and "description"
-                            in stage_table["stages"][stage["stageId"]]
+                            and "description" in stage_table["stages"][stage["stageId"]]
                         ):
                             desc: str = stage_table["stages"][stage["stageId"]][
                                 "description"

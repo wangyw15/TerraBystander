@@ -8,7 +8,7 @@ from .model import (
 )
 
 
-class ArknightsStoryParser:
+class Parser:
     def __init__(self, tokens: list[Token]) -> None:
         self.tokens: list[Token] = tokens
         self._index: int = 0
