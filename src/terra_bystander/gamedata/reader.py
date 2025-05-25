@@ -22,21 +22,12 @@ class Reader:
         self,
         gamedata_path: str | Path,
         secondary_gamedata_path: str | Path | None = None,
-        nickname: str = "Doctor",
     ):
         self.path = Path(gamedata_path)
         if secondary_gamedata_path is not None and secondary_gamedata_path != "":
             self.secondary_path = Path(secondary_gamedata_path)
         else:
             self.secondary_path = None
-        self.nickname = nickname
-
-    def _apply_template(self, template: str) -> str:
-        result = template
-
-        result = result.replace("{@nickname}", self.nickname)
-
-        return result
 
     def _convert_story_text(self, raw_text: str) -> list[ActorLine]:
         raw_lines = Tokenizer.split_code_lines(raw_text)
@@ -52,7 +43,7 @@ class Reader:
             for action in line.actions:
                 if isinstance(action, Property) and action.key == "name":
                     if line.actor_text is not None:
-                        text = self._apply_template(line.actor_text)
+                        text = line.actor_text
                     else:
                         text = ""
                     lines.append(

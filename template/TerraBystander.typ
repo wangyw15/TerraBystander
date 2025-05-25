@@ -48,6 +48,15 @@
   text(fill: rgb(c), t)
 }
 
+#show "{@nickname}": it => {
+  if "nickname" in sys.inputs {
+    text(sys.inputs.nickname)
+  }
+  else {
+    text[博士]
+  }
+}
+
 // functions for render
 #let description(content) = {
   if content != "" {
@@ -84,7 +93,12 @@
 )
 
 // data
-#let entries = json("data.json")
+#let entries = ()
+#if "data" in sys.inputs {
+  entries = json(sys.inputs.data)
+} else {
+  entries = json("data.json")
+}
 #let side_stories = ()
 #let main_stories = ()
 #let mini_stories = ()
@@ -130,23 +144,26 @@
               if last_name == "" or story.name != last_name {
                 last_name = story.name
 
-                let target = query(
+                let query_result = query(
                   heading.where(level: 3,
                   body: [#story.name])
-                ).at(0)
-                let location = target.location()
-                let number = numbering(
-                  "1",
-                  ..counter(page).at(location),
                 )
+                if query_result.len() > 0 {
+                  let target = query_result.at(0)
+                  let location = target.location()
+                  let number = numbering(
+                    "1",
+                    ..counter(page).at(location),
+                  )
 
-                link(location, box(stack(dir: ltr,
-                  box(width: 5em, align(right, story.code)),
-                  h(1em),
-                  box(width: 10em, align(left, target.body)),
-                  h(1em),
-                  box(width: 2em, align(right, number)),
-                )))
+                  link(location, box(stack(dir: ltr,
+                    box(width: 5em, align(right, story.code)),
+                    h(1em),
+                    box(width: 10em, align(left, target.body)),
+                    h(1em),
+                    box(width: 2em, align(right, number)),
+                  )))
+                }
               }
             }
           }
@@ -205,25 +222,31 @@
 #let entries_outline(entries) = {
   context {
     for entry in entries {
-      let target = query(
+      let query_result = query(
         heading.where(level: 2,
         body: [#entry.name])
-      ).at(0)
-      let location = target.location()
-      let number = numbering(
-        "1",
-        ..counter(page).at(location),
       )
-      link(location, stack(dir: ltr,
-        box(width: 12em, target.body),
-        h(1fr),
-        box(width: 2em, number),
-      ))
+      if query_result.len() > 0 {
+        let target = query_result.at(0)
+        let location = target.location()
+        let number = numbering(
+          "1",
+          ..counter(page).at(location),
+        )
+        link(location, stack(dir: ltr,
+          box(width: 12em, target.body),
+          h(1fr),
+          box(width: 2em, number),
+        ))
+      }
     }
   }
 }
 
 #heading(outlined: false, "泰拉观者")
+
+生成日期：#datetime.today().display()
+
 #pagebreak()
 #outline(title: "", target: heading.where(level: 1))
 #pagebreak()
@@ -247,3 +270,7 @@
 #entries_outline(other_stories)
 #pagebreak()
 #show_entries(other_stories)
+
+#pagebreak()
+
+项目地址：#link("https://github.com/wangyw15/TerraBystander")[wangyw15/TerraBystander]

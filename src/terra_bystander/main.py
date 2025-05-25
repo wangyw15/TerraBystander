@@ -23,17 +23,9 @@ def main():
         default="./data.json",
         required=False,
     )
-    _parser.add_argument(
-        "-n",
-        "--nickname",
-        type=str,
-        help="The nickname of Doctor",
-        default="博士",
-        required=False,
-    )
     args = _parser.parse_args()
 
-    reader = Reader(args.main_gamedata, args.secondary, args.nickname)
+    reader = Reader(args.main_gamedata, args.secondary)
     entries = reader.read_entries()
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(entries, f, ensure_ascii=False, cls=ScriptJsonEncoder)
