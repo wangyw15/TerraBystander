@@ -26,7 +26,8 @@ class ActorLine:
 
 
 @dataclass
-class Story:
+class AvgStory:
+    id: str
     name: str
     secondary_name: str
     code: str
@@ -36,17 +37,53 @@ class Story:
 
 
 @dataclass
-class Entry:
+class Activity:
+    id: str
     name: str
     secondary_name: str
     entry_type: EntryType
     activity_type: ActivityType
-    stories: list[Story]
+    stories: list[AvgStory]
+
+
+@dataclass
+class Power:
+    nation: str | None = None
+    group: str | None = None
+    team: str | None = None
+
+
+@dataclass
+class OperatorStory:
+    title: str
+    text: str
+
+
+@dataclass
+class Operator:
+    id: str
+    name: str
+    appellation: str
+    usage: str
+    description: str
+    profession: str
+    sub_profession: str
+    operator_stories: list[OperatorStory]
+    avg_entries: list[Activity]
+    main_power: Power
+    sub_powers: list[Power] | None = None
+
+
+
+@dataclass
+class GameDataForBook:
+    entries: list[Activity]
+    operators: list[Operator]
 
 
 class ScriptJsonEncoder(JSONEncoder):
     def default(self, o: Any) -> Any:
-        if isinstance(o, ActorLine) or isinstance(o, Story) or isinstance(o, Entry):
+        if isinstance(o, ActorLine) or isinstance(o, AvgStory) or isinstance(o, Activity) or isinstance(o, Power) or isinstance(o, OperatorStory) or isinstance(o, Operator) or isinstance(o, GameDataForBook):
             return asdict(o)
         if isinstance(o, Enum):
             return o.value

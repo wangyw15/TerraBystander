@@ -1,19 +1,27 @@
 from .model import (
     ActivityType,
     ActorLine,
-    Entry,
+    Activity,
+    AvgStory,
     EntryType,
+    GameDataForBook,
+    Operator,
+    OperatorStory,
+    Power,
     ScriptJsonEncoder,
-    Story,
 )
 from .reader import Reader
 
 __all__ = [
     "ActivityType",
     "ActorLine",
-    "Entry",
+    "Activity",
+    "AvgStory",
     "EntryType",
+    "GameDataForBook",
+    "Operator",
+    "OperatorStory",
+    "Power",
     "Reader",
     "ScriptJsonEncoder",
-    "Story",
 ]

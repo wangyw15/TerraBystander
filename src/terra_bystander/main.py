@@ -26,9 +26,9 @@ def main():
     args = _parser.parse_args()
 
     reader = Reader(args.main_gamedata, args.secondary)
-    entries = reader.read_entries()
+    data = reader.read_data()
     with open(args.output, "w", encoding="utf-8") as f:
-        json.dump(entries, f, ensure_ascii=False, cls=ScriptJsonEncoder)
+        json.dump(data, f, ensure_ascii=False, cls=ScriptJsonEncoder)
 
 
 if __name__ == "__main__":
