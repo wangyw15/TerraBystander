@@ -54,7 +54,8 @@
   text(fill: rgb(c), t)
 }
 
-#show "{@nickname}": it => {
+#let nickname_regex = regex("\{\@[Nn]ickname\}")
+#show nickname_regex: it => {
   if "nickname" in sys.inputs {
     text(sys.inputs.nickname)
   }
@@ -115,7 +116,8 @@
 }
 
 #let narrator(body) = {
-  for char in body.split("") {
+  let replaced = body.replace(nickname_regex, default_nickname)
+  for char in replaced.split("") {
     box(skew(ax: -15deg, text(fill: luma(40%), weight: "semibold", char)))
   }
 }
