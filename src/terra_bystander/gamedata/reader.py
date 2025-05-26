@@ -291,6 +291,9 @@ class Reader:
             if operator_data["profession"] not in Profession:
                 continue
 
+            if operator_data["name"].startswith("预备干员-"):
+                continue
+
             sub_profession: str = operator_data["subProfessionId"]
             sub_profession = uniequip_table["subProfDict"][sub_profession][
                 "subProfessionName"
