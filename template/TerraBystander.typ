@@ -1,4 +1,10 @@
+// config
+#let default_nickname = "博士"
+#let default_data = "data.json"
+
 // layout and style
+#let name_width = 8em
+#let name_spacing = 1em
 #set page(
   "a5",
   numbering: "1",
@@ -53,7 +59,37 @@
     text(sys.inputs.nickname)
   }
   else {
-    text[博士]
+    text(default_nickname)
+  }
+}
+
+// property map
+#let entry_type = (
+  ACTIVITY_STORY: "SideStory",
+  MAIN_STORY: "MainLine",
+  MINI_STORY: "MiniStory",
+  NONE: "OperatorRecords",
+)
+
+// data
+#let data = ()
+#if "data" in sys.inputs {
+  data = json(sys.inputs.data)
+} else {
+  data = json(default_data)
+}
+#let side_stories = ()
+#let main_stories = ()
+#let mini_stories = ()
+#for activity in data.activities {
+  if activity.activity_type == "ACTIVITY_STORY" {
+    side_stories.push(activity)
+  }
+  else if activity.activity_type == "MAIN_STORY" {
+    main_stories.push(activity)
+  }
+  else if activity.activity_type == "MINI_STORY" {
+    mini_stories.push(activity)
   }
 }
 
@@ -84,86 +120,97 @@
   }
 }
 
-// property map
-#let entry_type = (
-  ACTIVITY_STORY: "SideStory",
-  MAIN_STORY: "MainLine",
-  MINI_STORY: "MiniStory",
-  NONE: "OperatorRecords",
-)
+#let show_avg_story(story, show_title: true, show_description: true, show_avg_tag: true) = {
+  if show_title {
+    heading(level: 3, story.name)
+  }
+  if show_description {
+    description(story.description)
+  }
 
-// data
-#let entries = ()
-#if "data" in sys.inputs {
-  entries = json(sys.inputs.data)
-} else {
-  entries = json("data.json")
-}
-#let side_stories = ()
-#let main_stories = ()
-#let mini_stories = ()
-#let other_stories = ()
-#for entry in entries {
-  if entry.activity_type == "ACTIVITY_STORY" {
-    side_stories.push(entry)
+  if show_avg_tag {
+    heading(level: 4, story.avg_tag)
   }
-  else if entry.activity_type == "MAIN_STORY" {
-    main_stories.push(entry)
-  }
-  else if entry.activity_type == "MINI_STORY" {
-    mini_stories.push(entry)
-  }
-  else if entry.activity_type == "NONE" {
-    other_stories.push(entry)
+
+  for line in story.texts {
+    if line.name == "" {
+      par(first-line-indent: name_width + name_spacing,
+          hanging-indent: name_width + name_spacing - 2em,
+          narrator(line.text)
+      )
+    }
+    else {
+      par(hanging-indent: name_width + name_spacing, {
+        box(width: name_width, align(right, text(weight: "bold", line.name)))
+        h(name_spacing)
+        line.text
+      })
+    }
   }
 }
 
-#let show_entries(entries) = {
-  for entry in entries {
+#let default_outline_line(target, page_number) = {
+    stack(dir: ltr,
+      box(width: 12em, target.body),
+      h(1fr),
+      box(width: 3em, align(right, page_number)),
+    )
+  }
+
+#let custom_outline(target_selector, custom_line: default_outline_line) = {
+  context {
+    let query_result = query(target_selector)
+    if query_result.len() > 0 {
+      let target = query_result.at(0)
+      let location = target.location()
+      let number = numbering(
+        "1",
+        ..counter(page).at(location),
+      )
+      link(location, custom_line(target, number))
+    }
+  }
+}
+
+#let show_activities(activities) = {
+  for activity in activities {
     stack(
       dir: ltr,
       h(1em),
-      sub_heading(entry.secondary_name),
+      sub_heading(activity.secondary_name),
       h(1em),
-      heading(level: 2, entry.name),
+      heading(level: 2, activity.name),
       h(1fr),
       {
-        // entry type
+        // activity type
         align(top + right, {
           set text(size: 3em)
-          smallcaps(entry_type.at(entry.activity_type))
+          smallcaps(entry_type.at(activity.activity_type))
         })
       
-        // entry outline
+        // activity outline
         align(right + bottom,
           context {
             set text(size: 1em)
 
             let last_name = ""
-            for story in entry.stories {
+            for story in activity.stories {
               if last_name == "" or story.name != last_name {
                 last_name = story.name
 
-                let query_result = query(
-                  heading.where(level: 3,
-                  body: [#story.name])
-                )
-                if query_result.len() > 0 {
-                  let target = query_result.at(0)
-                  let location = target.location()
-                  let number = numbering(
-                    "1",
-                    ..counter(page).at(location),
-                  )
-
-                  link(location, box(stack(dir: ltr,
+                let custom_line(target, number) = {
+                  box(stack(dir: ltr,
                     box(width: 5em, align(right, story.code)),
                     h(1em),
                     box(width: 10em, align(left, target.body)),
                     h(1em),
                     box(width: 2em, align(right, number)),
-                  )))
+                  ))
                 }
+                custom_outline(
+                  heading.where(level: 3, body: [#story.name]),
+                  custom_line: custom_line,
+                )
               }
             }
           }
@@ -175,43 +222,20 @@
 
     // content
     let last_name = ""
-    for story in entry.stories {
+    for story in activity.stories {
       let new_story = last_name == "" or story.name != last_name
+      last_name = story.name
 
       set page(header: {
         set text(fill: luma(50%))
-        box(width: 1fr, align(left, entry.name))
+        box(width: 1fr, align(left, activity.name))
         box(width: 1fr, align(center)[泰拉观者])
         box(width: 1fr, align(right, story.code))
       })
 
-      if new_story {
-        last_name = story.name
-        heading(level: 3, story.name)
-        description(story.description)
-      }
+      show_avg_story(story, show_title: new_story, show_description: new_story, show_avg_tag: true)
 
-      heading(level: 4, story.avg_tag)
-
-      let name_width = 8em
-      let name_spacing = 1em
-
-      for line in story.texts {
-        if line.name == "" {
-          par(first-line-indent: name_width + name_spacing,
-              hanging-indent: name_width + name_spacing - 2em,
-              narrator(line.text)
-          )
-        }
-        else {
-          par(hanging-indent: name_width + name_spacing, {
-            box(width: name_width, align(right, text(weight: "bold", line.name)))
-            h(name_spacing)
-            line.text
-          })
-        }
-      }
-
+      // below is useless because the page is set above
       if new_story {
         pagebreak()
       }
@@ -219,58 +243,130 @@
   }
 }
 
-#let entries_outline(entries) = {
-  context {
-    for entry in entries {
-      let query_result = query(
-        heading.where(level: 2,
-        body: [#entry.name])
-      )
-      if query_result.len() > 0 {
-        let target = query_result.at(0)
-        let location = target.location()
-        let number = numbering(
-          "1",
-          ..counter(page).at(location),
-        )
-        link(location, stack(dir: ltr,
-          box(width: 12em, target.body),
-          h(1fr),
-          box(width: 2em, number),
-        ))
-      }
-    }
+#let volume_outline(activities) = context {
+  for activity in activities {
+    custom_outline(
+      heading.where(level: 2, body: [#activity.name]),
+    )
   }
 }
 
 #heading(outlined: false, "泰拉观者")
 
-生成日期：#datetime.today().display()
+文件生成日期：#datetime.today().display()
+
+游戏数据版本：#data.metadata.version
+
+游戏数据日期：#data.metadata.date.split("/").join("-")
 
 #pagebreak()
 #outline(title: "", target: heading.where(level: 1))
 #pagebreak()
 
 = MainLine
-#entries_outline(main_stories)
+#volume_outline(main_stories)
 #pagebreak()
-#show_entries(main_stories)
+#show_activities(main_stories)
 
 = SideStory
-#entries_outline(side_stories)
+#volume_outline(side_stories)
 #pagebreak()
-#show_entries(side_stories)
+#show_activities(side_stories)
 
 = MiniStory
-#entries_outline(mini_stories)
+#volume_outline(mini_stories)
 #pagebreak()
-#show_entries(mini_stories)
+#show_activities(mini_stories)
 
-= OperatorRecords
-#entries_outline(other_stories)
-#pagebreak()
-#show_entries(other_stories)
-
+= Operator
+#volume_outline(data.operators)
 #pagebreak()
 
-项目地址：#link("https://github.com/wangyw15/TerraBystander")[wangyw15/TerraBystander]
+#{
+  show heading.where(level: 2): it => {
+    text(size: 2.5em, font: "FangSong", it.body.text)
+  }
+  for operator in data.operators {
+    set page(header: {
+      set text(fill: luma(50%))
+      box(width: 1fr, align(left, operator.appellation))
+      box(width: 1fr, align(center)[泰拉观者])
+      box(width: 1fr, align(right, operator.name))
+    })
+    heading(level: 2, operator.name)
+    par(smallcaps(operator.appellation))
+    par({operator.profession; operator.sub_profession})
+    par(operator.usage)
+    par(operator.description)
+
+    pagebreak()
+
+    if operator.operator_stories.len() > 0 {
+      set page(header: {
+        set text(fill: luma(50%))
+        box(width: 1fr, align(left)[干员档案])
+        box(width: 1fr, align(center)[泰拉观者])
+        box(width: 1fr, align(right, operator.name))
+      })
+
+      heading(level: 3)[干员档案]
+
+      for story in operator.operator_stories {
+        heading(level: 4, story.title)
+
+        for line in story.text.split("\n") {
+          par(first-line-indent: 2em, line.trim())
+        }
+      }
+      pagebreak()
+    }
+
+    if operator.avgs.len() > 0 {
+      set page(header: {
+        set text(fill: luma(50%))
+        box(width: 1fr, align(left)[干员密录])
+        box(width: 1fr, align(center)[泰拉观者])
+        box(width: 1fr, align(right, operator.name))
+      })
+
+      heading(level: 3)[干员密录]
+      // outline
+      for activity in operator.avgs {
+        custom_outline(
+          heading.where(level: 4, body: [#activity.name])
+        )
+      }
+      pagebreak()
+
+      // content
+      let showed_name = false
+      for activity in operator.avgs {
+        for story in activity.stories {
+          set page(header: {
+            set text(fill: luma(50%))
+            box(width: 1fr, align(left, activity.name))
+            box(width: 1fr, align(center)[泰拉观者])
+            box(width: 1fr, align(right, operator.name))
+          })
+
+          if not showed_name {
+            heading(level: 4, activity.name)
+            showed_name = true
+          }
+          show_avg_story(story, show_title: false, show_avg_tag: false)
+        }
+      }
+      pagebreak()
+    }
+  }
+}
+
+#pagebreak()
+
+项目地址：#link("https://github.com/wangyw15/TerraBystander")[https://github.com/wangyw15/TerraBystander]
+
+封面/协助：#link("https://space.bilibili.com/148232872")[君曜\@Bilbili https://space.bilibili.com/148232872]
+
+版权归属：鹰角网络
+
+试读致谢：Wojuray，白河
