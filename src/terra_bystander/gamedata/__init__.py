@@ -1,13 +1,14 @@
 from .model import (
+    Activity,
     ActivityType,
     ActorLine,
-    Activity,
     AvgStory,
     EntryType,
     GameDataForBook,
     Operator,
     OperatorStory,
     Power,
+    Profession,
     ScriptJsonEncoder,
 )
 from .reader import Reader
@@ -22,6 +23,7 @@ __all__ = [
     "Operator",
     "OperatorStory",
     "Power",
+    "Profession",
     "Reader",
     "ScriptJsonEncoder",
 ]

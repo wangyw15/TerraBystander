@@ -59,6 +59,17 @@ class OperatorStory:
     text: str
 
 
+class Profession(Enum):
+    PIONEER = "PIONEER"
+    WARRIOR = "WARRIOR"
+    SNIPER = "SNIPER"
+    CASTER = "CASTER"
+    SUPPORT = "SUPPORT"
+    MEDIC = "MEDIC"
+    SPECIAL = "SPECIAL"
+    TANK = "TANK"
+
+
 @dataclass
 class Operator:
     id: str
@@ -66,24 +77,31 @@ class Operator:
     appellation: str
     usage: str
     description: str
-    profession: str
+    profession: Profession
     sub_profession: str
     operator_stories: list[OperatorStory]
-    avg_entries: list[Activity]
+    avgs: list[Activity]
     main_power: Power
     sub_powers: list[Power] | None = None
 
 
-
 @dataclass
 class GameDataForBook:
-    entries: list[Activity]
+    activities: list[Activity]
     operators: list[Operator]
 
 
 class ScriptJsonEncoder(JSONEncoder):
     def default(self, o: Any) -> Any:
-        if isinstance(o, ActorLine) or isinstance(o, AvgStory) or isinstance(o, Activity) or isinstance(o, Power) or isinstance(o, OperatorStory) or isinstance(o, Operator) or isinstance(o, GameDataForBook):
+        if (
+            isinstance(o, ActorLine)
+            or isinstance(o, AvgStory)
+            or isinstance(o, Activity)
+            or isinstance(o, Power)
+            or isinstance(o, OperatorStory)
+            or isinstance(o, Operator)
+            or isinstance(o, GameDataForBook)
+        ):
             return asdict(o)
         if isinstance(o, Enum):
             return o.value
