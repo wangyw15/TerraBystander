@@ -276,7 +276,6 @@ class Reader:
 
         :return: `list[Operator]`
         """
-        operators: list[Operator] = []
 
         character_table: dict[str, Any] = self._read_excel_data("character_table")
         handbook_info_table: dict[str, Any] = self._read_excel_data(
@@ -287,12 +286,16 @@ class Reader:
         )
         uniequip_table = self._read_excel_data("uniequip_table")
 
+        operators: dict[str, Operator] = {}
+        sort_table: list[str] = [""] * len(character_table)
         for operator_id, operator_data in character_table.items():
             if operator_data["profession"] not in Profession:
                 continue
 
             if operator_data["name"].startswith("预备干员-"):
                 continue
+
+            sort_table[operator_data["sortIndex"]] = operator_id
 
             sub_profession: str = operator_data["subProfessionId"]
             sub_profession = uniequip_table["subProfDict"][sub_profession][
@@ -396,20 +399,23 @@ class Reader:
                         )
                     )
 
-            operators.append(
-                Operator(
-                    id=operator_id,
-                    name=operator_data["name"],
-                    appellation=operator_data["appellation"],
-                    usage=operator_data["itemUsage"],
-                    description=operator_data["itemDesc"],
-                    profession=Profession(operator_data["profession"]),
-                    sub_profession=sub_profession,
-                    operator_stories=operator_stories,
-                    avgs=avgs,
-                    main_power=main_power,
-                    sub_powers=sub_powers,
-                )
+            operators[operator_id] = Operator(
+                id=operator_id,
+                name=operator_data["name"],
+                appellation=operator_data["appellation"],
+                usage=operator_data["itemUsage"],
+                description=operator_data["itemDesc"],
+                profession=Profession(operator_data["profession"]),
+                sub_profession=sub_profession,
+                operator_stories=operator_stories,
+                avgs=avgs,
+                main_power=main_power,
+                sub_powers=sub_powers,
             )
 
-        return operators
+        # sort operators
+        sorted_operators: list[Operator] = []
+        for operator_id in sort_table:
+            if operator_id in operators:
+                sorted_operators.append(operators[operator_id])
+        return sorted_operators
