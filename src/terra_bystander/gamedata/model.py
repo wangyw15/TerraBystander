@@ -86,7 +86,14 @@ class Operator:
 
 
 @dataclass
+class GameDataMetadata:
+    version: str
+    date: str
+
+
+@dataclass
 class GameDataForBook:
+    metadata: GameDataMetadata
     activities: list[Activity]
     operators: list[Operator]
 
@@ -100,6 +107,7 @@ class ScriptJsonEncoder(JSONEncoder):
             or isinstance(o, Power)
             or isinstance(o, OperatorStory)
             or isinstance(o, Operator)
+            or isinstance(o, GameDataMetadata)
             or isinstance(o, GameDataForBook)
         ):
             return asdict(o)

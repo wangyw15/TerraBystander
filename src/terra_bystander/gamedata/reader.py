@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,7 @@ from .model import (
     AvgStory,
     EntryType,
     GameDataForBook,
+    GameDataMetadata,
     Operator,
     OperatorStory,
     Power,
@@ -53,6 +55,7 @@ class Reader:
         :return: `GameDataForBook`
         """
         return GameDataForBook(
+            metadata=self._read_metadata(),
             activities=self._read_activities(),
             operators=self._read_operators(),
         )
@@ -97,6 +100,32 @@ class Reader:
                     )
                     break
         return lines
+
+    def _read_metadata(self) -> GameDataMetadata:
+        """
+        Read gamedata metadata
+
+        :return: `GameDataMetadata`
+        """
+        with (self.path / "excel" / "data_version.txt").open(
+            "r", encoding="utf-8"
+        ) as f:
+            raw_text = f.read()
+
+        if version_result := re.search(r"\d+\.\d+\.\d+", raw_text):
+            version = version_result[0]
+        else:
+            version = ""
+
+        if date_result := re.search(r"\d{4}\/\d{2}\/\d{2}", raw_text):
+            date = date_result[0]
+        else:
+            date = ""
+
+        return GameDataMetadata(
+            version=version,
+            date=date,
+        )
 
     def _read_excel_data(self, filename: str) -> Any:
         """
