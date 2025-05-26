@@ -1,7 +1,26 @@
 // config
-#let default_nickname = "博士"
-#let default_data = "data.json"
+#let nickname = "博士"
+#let data_path = "data.json"
 #let with_image = true
+#let resource_path = "ArknightsGameResource"
+
+// read from input
+#{
+  if "nickname" in sys.inputs {
+    nickname = sys.inputs.nickname
+  }
+  if "data" in sys.inputs {
+    data_path = sys.inputs.data
+  }
+  if "image" in sys.inputs {
+    with_image = sys.inputs.image == "true"
+  }
+  if "resource" in sys.inputs {
+    resource_path = sys.inputs.resource
+  }
+}
+
+// config from inputs
 
 // layout and style
 #let name_width = 8em
@@ -81,14 +100,7 @@
 }
 
 #let nickname_regex = regex("\{\@[Nn]ickname\}")
-#show nickname_regex: it => {
-  if "nickname" in sys.inputs {
-    text(sys.inputs.nickname)
-  }
-  else {
-    text(default_nickname)
-  }
-}
+#show nickname_regex: text(nickname)
 
 // property map
 #let entry_type = (
@@ -99,12 +111,7 @@
 )
 
 // data
-#let data = ()
-#if "data" in sys.inputs {
-  data = json(sys.inputs.data)
-} else {
-  data = json(default_data)
-}
+#let data = json(data_path)
 #let side_stories = ()
 #let main_stories = ()
 #let mini_stories = ()
@@ -142,7 +149,7 @@
 }
 
 #let narrator(body) = {
-  let replaced = body.replace(nickname_regex, default_nickname)
+  let replaced = body.replace(nickname_regex, nickname)
   for char in replaced.split("") {
     box(skew(ax: -15deg, text(fill: luma(40%), weight: "semibold", char)))
   }
@@ -322,10 +329,7 @@
       box(width: 1fr, align(right, operator.name))
     })
 
-    let skin_path = "ArknightsGameResource/skin"
-    if "resource" in sys.inputs {
-      skin_path = sys.inputs.resource + "/skin"
-    }
+    let skin_path = resource_path +"/skin"
 
     if with_image {
       set align(center + bottom)
