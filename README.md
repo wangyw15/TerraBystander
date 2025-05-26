@@ -16,8 +16,8 @@
 
 ```shell
 uv sync
-# path_to_secondary_gamedata 主要是为了英文名，可以不提供
-uv run main path_to_gamedata path_to_secondary_gamedata
+# -s path_to_secondary_gamedata 主要是为了英文名，可以不提供
+uv run main path_to_gamedata -s path_to_secondary_gamedata
 ```
 
 将生成的`data.json`复制到`template`文件夹下，运行命令
