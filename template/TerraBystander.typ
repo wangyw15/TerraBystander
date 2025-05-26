@@ -1,6 +1,7 @@
 // config
 #let default_nickname = "博士"
 #let default_data = "data.json"
+#let with_image = true
 
 // layout and style
 #let name_width = 8em
@@ -29,15 +30,40 @@
   smallcaps(it.body)
 }
 
-#show heading.where(level: 2): it => {
-  set text(size: 2.5em, font: "FangSong")
-  let chars = it.body.text.split("")
-  // chars.remove(0)
-  // chars.remove(-1)
-  stack(dir: ttb, spacing: 0.5em, ..chars)
+#let vertical_text(t) = {
+  if t == none {
+    return
+  }
+  block(rotate(90deg, reflow: true, {
+    let chars = t.split("")
+    chars.remove(0)
+    chars.remove(-1)
+
+    let elements = ()
+    let en_regex = regex("[A-Za-z0-9,.:;]")
+    for c in chars {
+      if c == "" {
+        continue
+      }
+      if c.match(en_regex) == none {
+        box(width: 0.3em)
+        box({
+          rotate(-90deg, origin: horizon + center, reflow: true, c)
+        })
+      }
+      else {
+        c
+      }
+    }
+  }))
 }
 
-#show heading.where(level: 3): it => box(height: 20%, width: 100%,
+#show heading.where(level: 2): it => {
+  set text(size: 2.5em, font: "FangSong")
+  vertical_text(it.body.text)
+}
+
+#show heading.where(level: 3): it => block(height: 20%, width: 100%,
   align(horizon,
     text(weight: "bold", size: 1.5em, it.body)
   )
@@ -48,9 +74,9 @@
 )
 
 // #show regex("<.+?>"): none
-#let re = regex("<color=#(\S+?)>(.*?)</color>")
-#show re: it => {
-  let (c, t) = it.text.match(re).captures
+#let color_regex = regex("<color=#(\S+?)>(.*?)</color>")
+#show color_regex: it => {
+  let (c, t) = it.text.match(color_regex).captures
   text(fill: rgb(c), t)
 }
 
@@ -97,7 +123,7 @@
 // functions for render
 #let description(content) = {
   if content != "" {
-    box(width: 100%, inset: 2em,
+    block(width: 100%, inset: 2em,
       {
         set par(spacing: 1em, leading: 1em)
         h(2em)
@@ -108,9 +134,9 @@
 }
 
 #let sub_heading(content) = {
-  rotate(90deg, origin: top + left, reflow: true, {
+  rotate(90deg, origin: top + start, reflow: true, {
     set text(size: 2em)
-    h(1.5em)
+    h(2.5em)
     smallcaps(content)
   })
 }
@@ -201,7 +227,7 @@
                 last_name = story.name
 
                 let custom_line(target, number) = {
-                  box(stack(dir: ltr,
+                  block(stack(dir: ltr,
                     box(width: 5em, align(right, story.code)),
                     h(1em),
                     box(width: 10em, align(left, target.body)),
@@ -285,9 +311,9 @@
 #pagebreak()
 
 #{
-  show heading.where(level: 2): it => {
-    text(size: 2.5em, font: "FangSong", it.body.text)
-  }
+  // show heading.where(level: 2): it => {
+  //   text(size: 2.5em, font: "FangSong", it.body.text)
+  // }
   for operator in data.operators {
     set page(header: {
       set text(fill: luma(50%))
@@ -295,11 +321,43 @@
       box(width: 1fr, align(center)[泰拉观者])
       box(width: 1fr, align(right, operator.name))
     })
-    heading(level: 2, operator.name)
-    par(smallcaps(operator.appellation))
-    par({operator.profession; operator.sub_profession})
-    par(operator.usage)
-    par(operator.description)
+
+    let skin_path = "ArknightsGameResource/skin"
+    if "resource" in sys.inputs {
+      skin_path = sys.inputs.resource + "/skin"
+    }
+
+    if with_image {
+      set align(center + bottom)
+      block(height: 1fr,
+        figure(
+          image(
+            fit: "contain",
+            skin_path + "/" + operator.id + "_1b.png"
+          )
+        )
+      )
+    }
+    {
+      show text: it => box({
+        text(stroke: white + 1.5pt, it)
+        place(top + start, text(it))
+      })
+
+      place(right + top, stack(dir: rtl, spacing: 1em, 
+        heading(level: 2, operator.name),
+        sub_heading(operator.appellation),
+      ))
+      place(left + top, stack(dir: ltr, spacing: 1em,
+        vertical_text(operator.usage),
+        vertical_text(operator.description),
+        {
+          v(0.3em)
+          vertical_text(operator.profession)
+          vertical_text(operator.sub_profession)
+        },
+      ))
+    }
 
     pagebreak()
 

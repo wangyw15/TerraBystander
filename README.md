@@ -16,14 +16,15 @@
 
 ```shell
 uv sync
-# -s path_to_secondary_gamedata 主要是为了英文名，可以不提供
+# -s path_to_secondary_gamedata主要是为了英文名，可以不提供
 uv run main path_to_gamedata -s path_to_secondary_gamedata
 ```
 
 将生成的`data.json`复制到`template`文件夹下，运行命令
 
 ```shell
-typst compile TerraBystander.typ --input nickname=博士名字 --input data=data.json的路径
+# input均为可选项
+typst compile TerraBystander.typ --input nickname=博士名字 --input data=data.json的路径 --input resource=ArknightsGameResource
 ```
 
 `TerraBystander.pdf`即为生成结果
