@@ -1,8 +1,7 @@
 // config
 #let nickname = "博士"
 #let data_path = "data.json"
-#let with_image = true
-#let resource_path = "ArknightsGameResource"
+#let skin_path = ""
 
 // read from input
 #{
@@ -12,11 +11,8 @@
   if "data" in sys.inputs {
     data_path = sys.inputs.data
   }
-  if "image" in sys.inputs {
-    with_image = sys.inputs.image == "true"
-  }
-  if "resource" in sys.inputs {
-    resource_path = sys.inputs.resource
+  if "skin" in sys.inputs {
+    skin_path = sys.inputs.skin
   }
 }
 
@@ -329,9 +325,7 @@
       box(width: 1fr, align(right, operator.name))
     })
 
-    let skin_path = resource_path +"/skin"
-
-    if with_image {
+    if skin_path != "" {
       set align(center + bottom)
       block(height: 1fr,
         figure(
