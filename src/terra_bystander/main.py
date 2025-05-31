@@ -40,12 +40,16 @@ def main():
     data = reader.read_data()
 
     if args.type == "json":
-        output_path: str = args.output if args.output.endswith(".json") else args.output + ".json"
+        output_path: str = (
+            args.output if args.output.endswith(".json") else args.output + ".json"
+        )
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, cls=ScriptJsonEncoder)
     elif args.type == "epub":
         print("Generating epub...")
-        output_path: str = args.output if args.output.endswith(".epub") else args.output + ".epub"
+        output_path: str = (
+            args.output if args.output.endswith(".epub") else args.output + ".epub"
+        )
         generator = EpubGenerator(data, output_path)
         generator.generate()
 

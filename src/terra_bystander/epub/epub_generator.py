@@ -1,15 +1,15 @@
 from pathlib import Path
-
 from xml.etree import ElementTree as ET
 
-from .model import ACTIVITY_TYPE_LABEL
 from ..gamedata import (
     Activity,
-    ActivityType,
     AvgStory,
     GameDataForBook,
     GameDataMetadata,
+    Operator,
 )
+from .model import ACTIVITY_TYPE_LABEL
+
 
 class EpubGenerator:
     def __init__(self, data: GameDataForBook, target_path: str | Path) -> None:
@@ -27,7 +27,6 @@ class EpubGenerator:
 
     # helpers
     def _tostring(self, element: ET.Element) -> str:
-        # return ET.tostring(element, encoding="utf-8").decode("utf-8")  # type: ignore
         return ET.tostring(element, encoding="unicode")  # type: ignore
 
     def _get_head(self, html: ET.Element) -> ET.Element:
@@ -70,7 +69,7 @@ class EpubGenerator:
 
         # title
         title_container = ET.SubElement(body, "h1")
-        title_container.attrib["class"] = "story title"
+        title_container.attrib["class"] = "avg title"
         code = ET.SubElement(title_container, "span")
         code.attrib["class"] = "code"
         code.text = story.code
@@ -80,21 +79,21 @@ class EpubGenerator:
 
         # avg tag
         avg_tag = ET.SubElement(body, "h2")
-        avg_tag.attrib["class"] = "story avg-tag"
+        avg_tag.attrib["class"] = "avg avg-tag"
         avg_tag.text = story.avg_tag
 
         # description
         description = ET.SubElement(body, "p")
-        description.attrib["class"] = "story description"
+        description.attrib["class"] = "avg description"
         description.text = story.description
 
         # story content
         container = ET.SubElement(body, "section")
-        container.attrib["class"] = "story container"
+        container.attrib["class"] = "avg container"
         # line
         for line in story.texts:
             story_line = ET.SubElement(container, "p")
-            story_line.attrib["class"] = "story line"
+            story_line.attrib["class"] = "avg line"
             if line.name == "":
                 story_line.attrib["class"] += " narrator"
 
@@ -106,7 +105,8 @@ class EpubGenerator:
 
             # name spacing
             name_spacing = ET.SubElement(story_line, "span")
-            name_spacing.attrib["class"] = "name-spacing"
+            name_spacing.attrib["class"] = "spacing"
+            name_spacing.text = " "
 
             # text
             text = ET.SubElement(story_line, "span")
@@ -149,8 +149,11 @@ class EpubGenerator:
 
         return html
 
-    def _generate_activity(self, activity: Activity) -> None:
-        working_path = self._content_path / activity.activity_type.value / activity.id
+    def _activity(self, activity: Activity, working_path: Path | None = None) -> None:
+        if working_path is None:
+            working_path = (
+                self._content_path / activity.activity_type.value / activity.id
+            )
         working_path.mkdir(exist_ok=True, parents=True)
 
         # outline page
@@ -162,7 +165,12 @@ class EpubGenerator:
             with (working_path / (story.id + ".html")).open("w", encoding="utf-8") as f:
                 f.write(self._tostring(self._story_page(story)))
 
-    def _volume_outline_page(self, chapters: list[Activity], title: str) -> ET.Element:
+    def _outline_page(
+        self,
+        chapters: list[Activity] | list[Operator],
+        title: str,
+        href_target: str = "",
+    ) -> ET.Element:
         html = self._basic_page()
         self._set_title(html, title)
 
@@ -170,21 +178,108 @@ class EpubGenerator:
 
         # title
         title_h1 = ET.SubElement(body, "h1")
-        title_h1.attrib["class"] = "volume title"
+        title_h1.attrib["class"] = "outline title"
         title_h1.text = title
 
         # outline
         outline_ul = ET.SubElement(body, "ul")
-        outline_ul.attrib["class"] = "volume outline"
+        outline_ul.attrib["class"] = "outline container"
         for chapter in chapters:
             story_li = ET.SubElement(outline_ul, "li")
-            story_li.attrib["class"] = "volume outline line"
+            story_li.attrib["class"] = "line"
 
             story_a = ET.SubElement(story_li, "a")
-            story_a.attrib["href"] = chapter.id + "/" + self.OUTLINE_PAGE_NAME
+            story_a.attrib["href"] = (
+                chapter.id + "/" + (href_target or self.OUTLINE_PAGE_NAME)
+            )
             story_a.text = chapter.name
 
         return html
+
+    def _operator_info_page(self, operator: Operator) -> ET.Element:
+        html = self._basic_page()
+        self._set_title(html, operator.name)
+
+        body = self._get_body(html)
+
+        # name
+        name = ET.SubElement(body, "h1")
+        name.attrib["class"] = "operator title"
+        name.text = operator.name
+
+        # appellation
+        secondary_name = ET.SubElement(body, "h2")
+        secondary_name.attrib["class"] = "operator secondary title"
+        secondary_name.text = operator.appellation
+
+        # usage
+        secondary_name = ET.SubElement(body, "p")
+        secondary_name.attrib["class"] = "operator usage"
+        secondary_name.text = operator.usage
+
+        # description
+        secondary_name = ET.SubElement(body, "p")
+        secondary_name.attrib["class"] = "operator description"
+        secondary_name.text = operator.description
+
+        # profession
+        profession_container = ET.SubElement(body, "p")
+        profession_container.attrib["class"] = "operator profession"
+        profession = ET.SubElement(profession_container, "span")
+        profession.attrib["class"] = "profession"
+        profession.text = operator.profession.value
+        profession_spacing = ET.SubElement(profession_container, "span")
+        profession_spacing.attrib["class"] = "spacing"
+        profession_spacing.text = " "
+        profession_spacing = ET.SubElement(profession_container, "span")
+        profession_spacing.attrib["class"] = "secondary profession"
+        profession_spacing.text = operator.sub_profession
+
+        return html
+
+    def _operator_stories_page(self, operator: Operator) -> ET.Element:
+        html = self._basic_page()
+        self._set_title(html, operator.name)
+
+        body = self._get_body(html)
+
+        # title
+        title = ET.SubElement(html, "h1")
+        title.attrib["class"] = "operator story title"
+        title.text = "干员档案"
+
+        container = ET.SubElement(body, "section")
+        container.attrib["class"] = "operator story container"
+        for story in operator.operator_stories:
+            title = ET.SubElement(container, "h2")
+            title.attrib["class"] = "title"
+            title.text = story.title
+            text = ET.SubElement(container, "p")
+            text.attrib["class"] = "text"
+            text.text = story.text.replace("\n", "<br/>")
+
+        return html
+
+    def _operator(self, operator: Operator) -> None:
+        working_path = self._content_path / self.OPERATOR_VOLUME_NAME / operator.id
+        working_path.mkdir(exist_ok=True, parents=True)
+
+        with (working_path / self.OPERATOR_INFO_PAGE_NAME).open(
+            "w", encoding="utf-8"
+        ) as f:
+            f.write(self._tostring(self._operator_info_page(operator)))
+
+        with (working_path / self.OPERATOR_STORIES_PAGE_NAME).open(
+            "w", encoding="utf-8"
+        ) as f:
+            f.write(self._tostring(self._operator_stories_page(operator)))
+
+        avg_path = working_path / self.OPERATOR_AVG_NAME
+        avg_path.mkdir(exist_ok=True, parents=True)
+        with (avg_path / self.OUTLINE_PAGE_NAME).open("w", encoding="utf-8") as f:
+            f.write(self._tostring(self._outline_page(operator.avgs, "干员密录")))
+        for activity in operator.avgs:
+            self._activity(activity, avg_path / activity.id)
 
     def metadata_page(self, metadata: GameDataMetadata) -> ET.Element:
         html = self._basic_page()
@@ -217,15 +312,41 @@ class EpubGenerator:
                 volumes[activity.activity_type.value] = []
             volumes[activity.activity_type.value].append(activity)
 
-            self._generate_activity(activity)
+            self._activity(activity)
 
-        # volume outline
+        # activities outline
         for volume_type, chapters in volumes.items():
-            with (self._content_path / volume_type / self.OUTLINE_PAGE_NAME).open("w", encoding="utf-8") as f:
-                f.write(self._tostring(self._volume_outline_page(chapters, ACTIVITY_TYPE_LABEL[volume_type])))
+            with (self._content_path / volume_type / self.OUTLINE_PAGE_NAME).open(
+                "w", encoding="utf-8"
+            ) as f:
+                f.write(
+                    self._tostring(
+                        self._outline_page(chapters, ACTIVITY_TYPE_LABEL[volume_type])
+                    )
+                )
+
+        # operators data
+        for operator in self.data.operators:
+            self._operator(operator)
+
+        # operators outline
+        with (
+            self._content_path / self.OPERATOR_VOLUME_NAME / self.OUTLINE_PAGE_NAME
+        ).open("w", encoding="utf-8") as f:
+            f.write(
+                self._tostring(
+                    self._outline_page(
+                        self.data.operators, "Operator", self.OPERATOR_INFO_PAGE_NAME
+                    )
+                )
+            )
 
     OUTLINE_PAGE_NAME = "_outline.html"
-    CSS = r'''
+    OPERATOR_VOLUME_NAME = "OPERATOR"
+    OPERATOR_INFO_PAGE_NAME = "_info.html"
+    OPERATOR_STORIES_PAGE_NAME = "_story.html"
+    OPERATOR_AVG_NAME = "avg"
+    CSS = r"""
 html {
     font-size: 16px;
     --name-spacing: 1rem;
@@ -261,4 +382,4 @@ p.story text {
 div.title.activity {
     font-weight: bold;
 }
-'''.strip()
+""".strip()
