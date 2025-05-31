@@ -1,0 +1,19 @@
+<html>
+
+<head>
+    <title>{{ operator.name }}</title>
+</head>
+
+<body>
+    <h1 class="operator title">{{ operator.name }}</h1>
+    <h2 class="operator secondary title">{{ operator.appellation }}</h2>
+    <p class="operator usage">{{ operator.usage }}</p>
+    <p class="operator description">{{ operator.description }}</p>
+    <p class="operator profession">
+        <span class="profession">{{ operator.profession.value }}</span>
+        <span class="spacing"> </span>
+        <span class="secondary profession">{{ operator.sub_profession }}</span>
+    </p>
+</body>
+
+</html>

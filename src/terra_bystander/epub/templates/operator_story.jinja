@@ -1,0 +1,19 @@
+<html>
+
+<head>
+    <title>{{ operator.name }}</title>
+</head>
+
+<body>
+    <h1 class="operator story title">干员档案</h1>
+    <section class="operator story container">
+        {%- for story in operator.operator_stories -%}
+            <h2 class="title">{{ story.title }}</h2>
+            {%- autoescape false -%}
+            <p class="text">{{ story.text | replace("\n", "<br/>") }}</p>
+            {%- endautoescape -%}
+        {%- endfor -%}
+    </section>
+</body>
+
+</html>

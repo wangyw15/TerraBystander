@@ -1,0 +1,20 @@
+<html>
+
+<head>
+    <title>{{ activity.name }}</title>
+</head>
+
+<body>
+    <h2 class="activity type">{{ activity.activity_type.value }}</h2>
+    <h1 class="activity title">{{ activity.name }}</h1>
+    <h2 class="activity secondary title">{{ activity.secondary_name }}</h2>
+    <ul class="activity outline">
+    {%- for avg in activity.stories -%}
+        <li class="activity outline line">
+            <a href="{{ avg.id }}.html">{{ avg.name }} {{ avg.avg_tag }}</a>
+        </li>
+    {%- endfor -%}
+    </ul>
+</body>
+
+</html>

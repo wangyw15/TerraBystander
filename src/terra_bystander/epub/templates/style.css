@@ -1,0 +1,8 @@
+p.avg.line {
+    min-width: 1rem;
+}
+
+.narrator {
+    color: gray;
+    font-style: italic;
+}

@@ -29,7 +29,7 @@ def main():
         "-o",
         "--output",
         type=str,
-        help="Path to save the result json",
+        help="Path to save the result file",
         required=False,
         default="./out",
     )

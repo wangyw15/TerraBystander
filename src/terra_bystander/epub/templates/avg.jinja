@@ -1,0 +1,39 @@
+<html>
+
+<head>
+    <title>{{ avg.name }}</title>
+    <style>
+        p.avg.line {
+            min-width: 1rem;
+        }
+
+        .narrator {
+            color: gray;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 class="avg title"><span class="code">{{ avg.code }}</span><span class="name">{{ avg.name }}</span></h1>
+    <h2 class="avg avg-tag">{{ avg.avg_tag }}</h2>
+    <p class="avg description">{{ avg.description }}</p>
+
+    <section class="avg container">
+        {%- for line in avg.texts -%}
+        {%- if line.name != "" -%}
+        <p class="avg line">
+        {%- else -%}
+        <p class="avg line narrator">
+        {%- endif -%}
+            <span class="speaker"><b>{{ line.name }}</b></span>
+            <span class="spacing"> </span>
+            {%- autoescape false -%}
+            <span class="text">{{ line.text | replace("\n", "<br/>") }}</span>
+            {%- endautoescape -%}
+        </p>
+        {%- endfor -%}
+    </section>
+</body>
+
+</html>
