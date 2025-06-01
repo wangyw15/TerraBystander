@@ -5,6 +5,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 from ..gamedata import (
     Activity,
+    ActivityType,
     AvgStory,
     GameDataForBook,
     GameDataMetadata,
@@ -115,10 +116,94 @@ class EpubGenerator:
         if self._volumes:
             return
 
+        # manually sort
+        self._volumes = {
+            ActivityType.MAIN_STORY.value: [],
+            ActivityType.ACTIVITY_STORY.value: [],
+            ActivityType.MINI_STORY.value: [],
+        }
         for activity in self.data.activities:
             if activity.activity_type.value not in self._volumes:
                 self._volumes[activity.activity_type.value] = []
             self._volumes[activity.activity_type.value].append(activity)
+
+    def _activities(
+        self,
+        book: epub.EpubBook,
+        activities: list[Activity],
+        path: str,
+    ) -> list:
+        """
+        Generate actitity contents
+
+        :params book: target book
+        :params activities: activities
+        :params path: path to save activities
+        :params toc_parent_item: toc will be generated under this item (item itself will also be generated)
+
+        :return: toc
+        """
+        path = path.rstrip("/")
+        activity_items = []
+        for activity in activities:
+            activity_outline_item = epub.EpubHtml(
+                uid=activity.id,
+                title=activity.name,
+                file_name=f"{path}/{activity.id}/{self.INDEX_PAGE_NAME}",
+            )
+            activity_outline_item.set_content(self._activity_page(activity))
+            # activity_outline_item.add_item(style_css)
+            book.add_item(activity_outline_item)
+            book.spine.append(activity_outline_item)
+
+            # toc
+            story_items = []
+            leading_story_item: epub.EpubHtml | None = None
+            last_story_name: str = ""
+            story_stages: list[epub.EpubHtml] = []
+
+            for story in activity.stories:
+                story_item = epub.EpubHtml(
+                    uid=story.id,
+                    title=story.avg_tag,
+                    file_name=f"{path}/{activity.id}/{story.id}.xhtml",
+                )
+                story_item.set_content(self._story_page(story))
+                # story_item.add_item(style_css)
+                book.add_item(story_item)
+                book.spine.append(story_item)
+
+                # toc
+                if last_story_name != story.name:
+                    if leading_story_item is not None and len(story_stages) > 0:
+                        story_items.append(
+                            (
+                                epub.Link(
+                                    href=leading_story_item.file_name,
+                                    title=last_story_name,
+                                ),
+                                story_stages,
+                            )
+                        )
+                        story_stages = []
+                    leading_story_item = story_item
+
+                story_stages.append(story_item)
+                last_story_name = story.name
+
+            # last toc item
+            if leading_story_item is not None and len(story_stages) > 0:
+                story_items.append(
+                    (
+                        epub.Link(
+                            href=leading_story_item.file_name, title=last_story_name
+                        ),
+                        story_stages,
+                    )
+                )
+
+            activity_items.append((activity_outline_item, story_items))
+        return activity_items
 
     def generate(self) -> None:
         """
@@ -162,51 +247,12 @@ class EpubGenerator:
             book.add_item(volume_outline_item)
             book.spine.append(volume_outline_item)
 
-            activity_items = []
-            for activity in volume_entries:
-                activity_outline_item = epub.EpubHtml(
-                    uid=activity.id,
-                    title=activity.name,
-                    file_name=f"content/{volume_type}/{activity.id}/{self.INDEX_PAGE_NAME}",
-                )
-                activity_outline_item.set_content(self._activity_page(activity))
-                # activity_outline_item.add_item(style_css)
-                book.add_item(activity_outline_item)
-                book.spine.append(activity_outline_item)
-
-                # toc
-                story_items = []
-                leading_story_item: epub.EpubHtml | None = None
-                last_story_name: str = ""
-                story_stages: list[epub.EpubHtml] = []
-
-                for story in activity.stories:
-                    story_item = epub.EpubHtml(
-                        uid=story.id,
-                        title=story.avg_tag,
-                        file_name=f"content/{volume_type}/{activity.id}/{story.id}.xhtml",
-                    )
-                    story_item.set_content(self._story_page(story))
-                    # story_item.add_item(style_css)
-                    book.add_item(story_item)
-                    book.spine.append(story_item)
-
-                    # toc
-                    if last_story_name != story.name:
-                        if leading_story_item is not None and len(story_stages) > 0:
-                            story_items.append((epub.Link(href=leading_story_item.file_name, title=last_story_name), story_stages))
-                            story_stages = []
-                        leading_story_item = story_item
-                    
-                    story_stages.append(story_item)
-                    last_story_name = story.name
-
-                # last toc item
-                if leading_story_item is not None and len(story_stages) > 0:
-                    story_items.append((epub.Link(href=leading_story_item.file_name, title=last_story_name), story_stages))
-
-                activity_items.append((activity_outline_item, story_items))
-            book.toc.append((volume_outline_item, activity_items))
+            activity_toc = self._activities(
+                book=book,
+                activities=volume_entries,
+                path=f"content/{volume_type}",
+            )
+            book.toc.append((volume_outline_item, activity_toc))
 
         # operators
         operators_outline_item = epub.EpubHtml(
@@ -221,7 +267,9 @@ class EpubGenerator:
         book.add_item(operators_outline_item)
         book.spine.append(operators_outline_item)
 
+        operators_items = []  # todo
         for operator in self.data.operators:
+            current_operator_items = []
             operator_info_item = epub.EpubHtml(
                 uid=operator.id + "_info",
                 title=operator.name,
@@ -234,13 +282,14 @@ class EpubGenerator:
 
             operator_stories_item = epub.EpubHtml(
                 uid=operator.id + "_story",
-                title=operator.name,
+                title="干员档案",
                 file_name=f"content/{self.OPERATOR_VOLUME_NAME}/{operator.id}/{self.OPERATOR_STORIES_PAGE_NAME}",
             )
             operator_stories_item.set_content(self._operator_stories_page(operator))
             # operator_stories_item.add_item(style_css)
             book.add_item(operator_stories_item)
             book.spine.append(operator_stories_item)
+            current_operator_items.append(operator_stories_item)
 
             operator_avgs_outline_item = epub.EpubHtml(
                 uid=operator.id + "_avgs",
@@ -254,27 +303,17 @@ class EpubGenerator:
             book.add_item(operator_avgs_outline_item)
             book.spine.append(operator_avgs_outline_item)
 
-            for activity in operator.avgs:
-                activity_outline_item = epub.EpubHtml(
-                    uid=activity.id,
-                    title=activity.name,
-                    file_name=f"content/{self.OPERATOR_VOLUME_NAME}/{operator.id}/{self.OPERATOR_AVG_NAME}/{activity.id}/{self.INDEX_PAGE_NAME}",
-                )
-                activity_outline_item.set_content(self._activity_page(activity))
-                # activity_outline_item.add_item(style_css)
-                book.add_item(activity_outline_item)
-                book.spine.append(activity_outline_item)
+            operator_avgs_toc = self._activities(
+                book=book,
+                activities=operator.avgs,
+                path=f"content/{self.OPERATOR_VOLUME_NAME}/{operator.id}/{self.OPERATOR_AVG_NAME}",
+            )
 
-                for story in activity.stories:
-                    story_item = epub.EpubHtml(
-                        uid=story.id,
-                        title=story.name,
-                        file_name=f"content/{self.OPERATOR_VOLUME_NAME}/{operator.id}/{self.OPERATOR_AVG_NAME}/{activity.id}/{story.id}.xhtml",
-                    )
-                    story_item.set_content(self._story_page(story))
-                    # story_item.add_item(style_css)
-                    book.add_item(story_item)
-                    book.spine.append(story_item)
+            current_operator_items.append(
+                (operator_avgs_outline_item, operator_avgs_toc)
+            )
+            operators_items.append((operator_info_item, current_operator_items))
+        book.toc.append((operators_outline_item, operators_items))
 
         book.add_item(epub.EpubNcx())
         book.add_item(epub.EpubNav())
