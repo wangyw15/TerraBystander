@@ -3,6 +3,7 @@ import json
 
 from .epub import EpubGenerator
 from .gamedata import Reader, ScriptJsonEncoder
+from .txt import generate_txt
 
 
 def main():
@@ -23,7 +24,7 @@ def main():
         help="Output file type",
         required=False,
         default="json",
-        choices=["json", "epub"],
+        choices=["json", "epub", "txt"],
     )
     _parser.add_argument(
         "-o",
@@ -52,6 +53,13 @@ def main():
         )
         generator = EpubGenerator(data, output_path)
         generator.generate()
+    elif args.type == "txt":
+        print("Generating txt...")
+        output_path: str = (
+            args.output if args.output.endswith(".txt") else args.output + ".txt"
+        )
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(generate_txt(data))
 
 
 if __name__ == "__main__":
