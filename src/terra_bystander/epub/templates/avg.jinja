@@ -26,7 +26,7 @@
         {%- else -%}
         <p class="avg line narrator">
         {%- endif -%}
-            <span class="speaker"><b>{{ line.name }}</b></span>
+            <span class="speaker"><b>【{{ line.name }}】</b></span>
             <span class="spacing"> </span>
             {%- autoescape false -%}
             <span class="text">{{ line.text | replace("\n", "<br/>") }}</span>
