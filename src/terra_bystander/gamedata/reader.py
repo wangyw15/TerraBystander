@@ -40,12 +40,12 @@ class Reader:
         )
 
         if secondary_gamedata_path is not None and secondary_gamedata_path != "":
-            self.secondary_path = Path(secondary_gamedata_path)
+            self.secondary_path: Path | None = Path(secondary_gamedata_path)
             self.secondary_story_review_table: dict[str, Any] = (
                 self._read_secondary_excel_data("story_review_table")
             )
         else:
-            self.secondary_path = None
+            self.secondary_path: Path | None = None
             self.secondary_story_review_table = {}
 
     def read_data(self) -> GameDataForBook:
