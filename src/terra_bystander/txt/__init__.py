@@ -27,6 +27,7 @@ def generate_txt(data: GameDataForBook) -> str:
             _result += f"『{volume_title}』{activity.name}\n"
             for story in activity.stories:
                 _result += f"「{story.name}」{story.avg_tag}\n"
+                _result += story.description
                 for line in story.texts:
                     if line.name != "":
                         _result += f"【{line.name}】"
