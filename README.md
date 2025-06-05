@@ -44,8 +44,14 @@ typst compile TerraBystander.typ --input nickname=博士名字 --input data=data
 
 ## Epub
 
-> Working In Progress...
+> Experimental
 
 ```shell
 uv run main path_to_gamedata -s path_to_secondary_gamedata -t epub
+```
+
+## TXT
+
+```shell
+uv run main path_to_gamedata -s path_to_secondary_gamedata -t txt
 ```
