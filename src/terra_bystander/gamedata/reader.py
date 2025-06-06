@@ -224,6 +224,18 @@ class Reader:
                                 desc = desc.split("\\n")[0]
                                 descriptions.append(desc)
 
+                info: str = ""
+                if (
+                    "storyInfo" in story
+                    and story["storyInfo"] is not None
+                    and story["storyInfo"] != ""
+                ):
+                    info_path = (
+                        self.path / "story" / ("[uc]" + story["storyInfo"] + ".txt")
+                    )
+                    with info_path.open("r", encoding="utf-8") as f:
+                        info: str = f.read().strip()
+
                 stories.append(
                     AvgStory(
                         id=story["storyId"],
@@ -234,6 +246,7 @@ class Reader:
                         code=story["storyCode"],
                         avg_tag=story["avgTag"],
                         description="\n".join(descriptions),
+                        info=info,
                         texts=texts,
                     )
                 )
@@ -363,6 +376,20 @@ class Reader:
                         with story_path.open("r", encoding="utf-8") as f:
                             texts = self._convert_story_text(f.read())
 
+                        info: str = ""
+                        if (
+                            "storyInfo" in story
+                            and story["storyInfo"] is not None
+                            and story["storyInfo"] != ""
+                        ):
+                            info_path = (
+                                self.path
+                                / "story"
+                                / ("[uc]" + story["storyInfo"] + ".txt")
+                            )
+                            with info_path.open("r", encoding="utf-8") as f:
+                                info: str = f.read().strip()
+
                         story_dict = self._read_story_dict(
                             story["storySetId"], story["storyId"]
                         )
@@ -382,6 +409,7 @@ class Reader:
                                 if story_dict is not None
                                 else "",
                                 description=story["storyIntro"],
+                                info=info,
                                 texts=texts,
                             )
                         )

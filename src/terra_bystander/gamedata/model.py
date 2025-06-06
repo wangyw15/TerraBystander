@@ -33,6 +33,7 @@ class AvgStory:
     code: str
     avg_tag: str
     description: str
+    info: str
     texts: list[ActorLine]
 
 
