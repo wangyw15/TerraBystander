@@ -11,6 +11,7 @@ from .model import (
     Power,
     Profession,
     ScriptJsonEncoder,
+    Voice,
 )
 from .reader import Reader
 
@@ -28,4 +29,5 @@ __all__ = [
     "Profession",
     "Reader",
     "ScriptJsonEncoder",
+    "Voice",
 ]
