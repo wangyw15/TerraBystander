@@ -72,6 +72,12 @@ class Profession(Enum):
 
 
 @dataclass
+class Voice:
+    title: str
+    text: str
+
+
+@dataclass
 class Operator:
     id: str
     name: str
@@ -81,6 +87,7 @@ class Operator:
     profession: Profession
     sub_profession: str
     operator_stories: list[OperatorStory]
+    voices: list[Voice]
     avgs: list[Activity]
     main_power: Power
     sub_powers: list[Power] | None = None

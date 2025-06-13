@@ -21,6 +21,7 @@ from .model import (
     OperatorStory,
     Power,
     Profession,
+    Voice,
 )
 
 
@@ -283,6 +284,32 @@ class Reader:
                 return story
         return None
 
+    def _read_operator_voices(self, operator_id: str) -> list[Voice]:
+        """
+        Read operator's all voice content
+
+        :params operator_id: operator id
+
+        :return: list[Voice]
+        """
+        charword_table: dict[str, Any] = self._read_excel_data("charword_table")
+
+        # get all voices belonged to the operator
+        voices: dict[int, Voice] = {}
+        for _, data in charword_table["charWords"].items():
+            if data["charId"] == operator_id:
+                voices[data["voiceIndex"]] = Voice(
+                    title=data["voiceTitle"], text=data["voiceText"]
+                )
+
+        # sort by index
+        indexes: list[int] = sorted(voices.keys())
+        ret: list[Voice] = []
+        for i in indexes:
+            ret.append(voices[i])
+
+        return ret
+
     def _read_operators(self) -> list[Operator]:
         """
         Read all operator info and their stories
@@ -436,6 +463,7 @@ class Reader:
                 profession=Profession(operator_data["profession"]),
                 sub_profession=sub_profession,
                 operator_stories=operator_stories,
+                voices=self._read_operator_voices(operator_id),
                 avgs=avgs,
                 main_power=main_power,
                 sub_powers=sub_powers,

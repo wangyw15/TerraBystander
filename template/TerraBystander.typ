@@ -16,8 +16,6 @@
   }
 }
 
-// config from inputs
-
 // layout and style
 #let name_width = 8em
 #let name_spacing = 1em
@@ -375,6 +373,23 @@
         for line in story.text.split("\n") {
           par(first-line-indent: 2em, line.trim())
         }
+      }
+      pagebreak()
+    }
+
+    if operator.voices.len() > 0 {
+      set page(header: {
+        set text(fill: luma(50%))
+        box(width: 1fr, align(left)[语音记录])
+        box(width: 1fr, align(center)[泰拉观者])
+        box(width: 1fr, align(right, operator.name))
+      })
+
+      heading(level: 3)[语音记录]
+
+      for voice in operator.voices {
+        heading(level: 4, voice.title)
+        par(first-line-indent: 2em, voice.text)
       }
       pagebreak()
     }
