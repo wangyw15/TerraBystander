@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from ..gamedata import (
     Activity,
     ActivityType,
@@ -37,6 +39,12 @@ def generate_txt(data: GameDataForBook) -> str:
 
     result = ""
 
+    # metadata
+    result += "【游戏数据版本】" + data.metadata.version + "\n"
+    result += "【游戏数据日期】" + data.metadata.date + "\n"
+    result += "【文件生成日期】" + datetime.now().strftime("%Y-%m-%d") + "\n"
+    result += "\n"
+
     volumes: dict[str, list[Activity]] = {
         ActivityType.MAIN_STORY.value: [],
         ActivityType.ACTIVITY_STORY.value: [],
@@ -54,13 +62,20 @@ def generate_txt(data: GameDataForBook) -> str:
         result += operator.usage + "\n"
         result += operator.description + "\n"
 
-        result += "「干员档案」\n"
-        for line in operator.operator_stories:
-            result += line.title + "\n"
-            result += line.text + "\n"
+        if len(operator.operator_stories) > 0:
+            result += "「干员档案」\n"
+            for line in operator.operator_stories:
+                result += line.title + "\n"
+                result += line.text + "\n"
 
-        result += "「干员密录」\n"
-        result += _activities_content(operator.avgs, "干员密录")
+        if len(operator.voices) > 0:
+            result += "语音记录\n"
+            for voice in operator.voices:
+                result += "【" + voice.title + "】" + voice.text + "\n"
+
+        if len(operator.avgs) > 0:
+            result += "「干员密录」\n"
+            result += _activities_content(operator.avgs, "干员密录")
 
     return result.replace("\r\n", "\n")
 
