@@ -27,7 +27,9 @@ def download_comic(comic_downloader: Comic, output_path: str):
 
         episode_count = len(comic_data["episodes"])
         for episode in tqdm(comic_data["episodes"], position=1, leave=True):
-            episode_path = comic_path / (str(episode_count).zfill(3) + " " + episode["title"])
+            episode_path = comic_path / (
+                str(episode_count).zfill(3) + " " + episode["title"]
+            )
             episode_count -= 1
             episode_path.mkdir()
             episode_data = comic_downloader.episode_data(

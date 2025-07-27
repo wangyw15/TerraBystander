@@ -78,6 +78,15 @@ class Voice:
 
 
 @dataclass
+class UniEquip:
+    id: str
+    type_name_1: str
+    type_name_2: str | None
+    name: str
+    description: str
+
+
+@dataclass
 class Operator:
     id: str
     name: str
@@ -91,6 +100,7 @@ class Operator:
     avgs: list[Activity]
     main_power: Power
     sub_powers: list[Power] | None = None
+    uniequips: list[UniEquip] | None = None
 
 
 @dataclass

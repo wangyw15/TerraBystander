@@ -21,6 +21,7 @@ from .model import (
     OperatorStory,
     Power,
     Profession,
+    UniEquip,
     Voice,
 )
 
@@ -292,11 +293,14 @@ class Reader:
 
         :return: list[Voice]
         """
-        charword_table: dict[str, Any] = self._read_excel_data("charword_table")
+        if getattr(self, "_charword_table", None) is None:
+            self._charword_table: dict[str, Any] = self._read_excel_data(
+                "charword_table"
+            )
 
         # get all voices belonged to the operator
         voices: dict[int, Voice] = {}
-        for _, data in charword_table["charWords"].items():
+        for _, data in self._charword_table["charWords"].items():
             if data["charId"] == operator_id:
                 voices[data["voiceIndex"]] = Voice(
                     title=data["voiceTitle"], text=data["voiceText"]
@@ -307,6 +311,39 @@ class Reader:
         ret: list[Voice] = []
         for i in indexes:
             ret.append(voices[i])
+
+        return ret
+
+    def _read_operator_uniequips(self, operator_id: str) -> list[UniEquip]:
+        """
+        Read operator's all uniequip content
+
+        :params operator_id: operator id
+
+        :return: list[UniEquip]
+        """
+        if getattr(self, "_uniequip_table", None) is None:
+            self._uniequip_table: dict[str, Any] = self._read_excel_data(
+                "uniequip_table"
+            )
+
+        # get all uniequips belonged to the operator
+        uniequips: dict[int, UniEquip] = {}
+        for _, data in self._uniequip_table["equipDict"].items():
+            if data["charId"] == operator_id:
+                uniequips[data["charEquipOrder"]] = UniEquip(
+                    id=data["uniEquipId"],
+                    type_name_1=data["typeName1"],
+                    type_name_2=data["typeName2"],
+                    name=data["uniEquipName"],
+                    description=data["uniEquipDesc"],
+                )
+
+        # sort by index
+        indexes: list[int] = sorted(uniequips.keys())
+        ret: list[UniEquip] = []
+        for i in indexes:
+            ret.append(uniequips[i])
 
         return ret
 
@@ -467,6 +504,7 @@ class Reader:
                 avgs=avgs,
                 main_power=main_power,
                 sub_powers=sub_powers,
+                uniequips=self._read_operator_uniequips(operator_id),
             )
 
         # sort operators
