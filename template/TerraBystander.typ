@@ -377,6 +377,33 @@
       pagebreak()
     }
 
+    if operator.uniequips.len() > 0 {
+      set page(header: {
+        set text(fill: luma(50%))
+        box(width: 1fr, align(left)[模组])
+        box(width: 1fr, align(center)[泰拉观者])
+        box(width: 1fr, align(right, operator.name))
+      })
+
+      heading(level: 3)[模组]
+
+      for uniequip in operator.uniequips {
+        let type_name = ""
+        if (uniequip.type_name_2 == none) {
+          type_name = uniequip.type_name_1
+        }
+        else {
+          type_name = uniequip.type_name_1 + "-" + uniequip.type_name_2
+        }
+        heading(level: 4, uniequip.name + "（" + type_name + "）")
+
+        for line in uniequip.description.split("\n") {
+          par(first-line-indent: 2em, line.trim())
+        }
+      }
+      pagebreak()
+    }
+
     if operator.voices.len() > 0 {
       set page(header: {
         set text(fill: luma(50%))
