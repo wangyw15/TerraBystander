@@ -1,7 +1,9 @@
-import argparse
 import json
+from enum import Enum
 from pathlib import Path
+from typing import Annotated
 
+import typer
 from tqdm import tqdm, trange
 
 from .comic import Comic
@@ -9,13 +11,78 @@ from .epub import EpubGenerator
 from .gamedata import Reader, ScriptJsonEncoder
 from .txt import generate_txt
 
+typer_app = typer.Typer()
 
-def download_comic(comic_downloader: Comic, output_path: str):
+
+class BookType(str, Enum):
+    json = "json"
+    epub = "epub"
+    txt = "txt"
+
+
+@typer_app.command()
+def book(
+    main_gamedata_path: Path,
+    output_file: Path,
+    book_type: Annotated[BookType, typer.Option("--type", "-t")] = BookType.json,
+    secondary_gamedata_path: Annotated[
+        Path | None, typer.Option("--secondary-gamedata-path", "-s")
+    ] = None,
+) -> None:
+    print("Reading data...")
+    reader = Reader(main_gamedata_path, secondary_gamedata_path)
+    data = reader.read_data()
+
+    if book_type == BookType.json:
+        print("Writing json...")
+        with output_file.open("w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, cls=ScriptJsonEncoder)
+    elif book_type == BookType.epub:
+        print("Generating epub...")
+        generator = EpubGenerator(data, output_file)
+        generator.generate()
+    elif book_type == BookType.txt:
+        print("Generating txt...")
+        with output_file.open("w", encoding="utf-8") as f:
+            f.write(generate_txt(data))
+
+
+class ComicAction(str, Enum):
+    list = "list"
+    download_all = "download_all"
+
+
+@typer_app.command()
+def comic(
+    action: ComicAction,
+    output_path: Path | None = None,
+) -> None:
+    comic_downloader = Comic()
+
+    if action == ComicAction.list:
+        comics = comic_downloader.list_comics()
+        if comics is not None:
+            for c in comics:
+                print_line = c["title"]
+                if c["subtitle"] != "":
+                    print_line += " " + c["subtitle"]
+                print_line += " by " + "/".join(c["authors"])
+                print(print_line)
+        else:
+            print("Error when fetch comic list")
+
+    elif action == ComicAction.download_all:
+        if output_path is None:
+            print("Please specify comic download path")
+            return
+        download_comic(comic_downloader, output_path)
+
+
+def download_comic(comic_downloader: Comic, comic_output_path: Path):
     comics = comic_downloader.list_comics()
     if comics is None:
         raise ValueError("Error when fetch comic list")
 
-    comic_output_path: Path = Path(output_path)
     comic_output_path.mkdir(parents=True, exist_ok=True)
     for c in tqdm(comics, position=0, leave=True):
         comic_path = comic_output_path / c["title"]
@@ -68,99 +135,7 @@ def download_comic(comic_downloader: Comic, output_path: str):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(title="subcommands", dest="subcommand")
-
-    book_parser = subparsers.add_parser(
-        "book", help="Tools for gamedata extraction and book generation"
-    )
-    book_parser.add_argument(
-        "main_gamedata", type=str, help="Path to main gamedata folder"
-    )
-    book_parser.add_argument(
-        "-s",
-        "--secondary",
-        type=str,
-        help="Path to secondary gamedata folder",
-        required=False,
-        default=None,
-    )
-    book_parser.add_argument(
-        "-t",
-        "--type",
-        type=str,
-        help="Output file type",
-        required=False,
-        default="json",
-        choices=["json", "epub", "txt"],
-    )
-    book_parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        help="Path to save the result file",
-        required=False,
-        default="./out",
-    )
-
-    comic_parser = subparsers.add_parser("comic", help="Tools for downloading comics")
-    comic_parser.add_argument(
-        "action", type=str, help="Action", choices=["list", "download_all"]
-    )
-    comic_parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        help="Path to save the comics",
-        required=False,
-        default="./comics",
-    )
-
-    args = parser.parse_args()
-
-    if args.subcommand == "book":
-        print("Reading data...")
-        reader = Reader(args.main_gamedata, args.secondary)
-        data = reader.read_data()
-
-        if args.type == "json":
-            book_output_path: str = (
-                args.output if args.output.endswith(".json") else args.output + ".json"
-            )
-            with open(book_output_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, cls=ScriptJsonEncoder)
-        elif args.type == "epub":
-            print("Generating epub...")
-            book_output_path: str = (
-                args.output if args.output.endswith(".epub") else args.output + ".epub"
-            )
-            generator = EpubGenerator(data, book_output_path)
-            generator.generate()
-        elif args.type == "txt":
-            print("Generating txt...")
-            book_output_path: str = (
-                args.output if args.output.endswith(".txt") else args.output + ".txt"
-            )
-            with open(book_output_path, "w", encoding="utf-8") as f:
-                f.write(generate_txt(data))
-
-    elif args.subcommand == "comic":
-        comic_downloader = Comic()
-
-        if args.action == "list":
-            comics = comic_downloader.list_comics()
-            if comics is not None:
-                for c in comics:
-                    print_line = c["title"]
-                    if c["subtitle"] != "":
-                        print_line += " " + c["subtitle"]
-                    print_line += " by " + "/".join(c["authors"])
-                    print(print_line)
-            else:
-                print("Error when fetch comic list")
-
-        elif args.action == "download_all":
-            download_comic(comic_downloader, args.output)
+    typer_app()
 
 
 if __name__ == "__main__":
