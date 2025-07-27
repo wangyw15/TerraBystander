@@ -10,6 +10,61 @@ from .gamedata import Reader, ScriptJsonEncoder
 from .txt import generate_txt
 
 
+def download_comic(comic_downloader: Comic, output_path: str):
+    comics = comic_downloader.list_comics()
+    if comics is None:
+        raise ValueError("Error when fetch comic list")
+
+    comic_output_path: Path = Path(output_path)
+    comic_output_path.mkdir(parents=True, exist_ok=True)
+    for c in tqdm(comics, position=0, leave=True):
+        comic_path = comic_output_path / c["title"]
+        comic_path.mkdir()
+        comic_data = comic_downloader.comic_data(c["cid"])
+        if comic_data is None:
+            print(f"Error when fetch data for comic {c['title']}")
+            continue
+
+        episode_count = len(comic_data["episodes"])
+        for episode in tqdm(comic_data["episodes"], position=1, leave=True):
+            episode_path = comic_path / (str(episode_count).zfill(3) + " " + episode["title"])
+            episode_count -= 1
+            episode_path.mkdir()
+            episode_data = comic_downloader.episode_data(
+                comic_data["cid"], episode["cid"]
+            )
+            if episode_data is None:
+                print(
+                    f"Error when fetch data for episode {episode['title']} comic {c['title']}"
+                )
+                continue
+
+            for page_num in trange(
+                len(episode_data["pageInfos"]), position=2, leave=True
+            ):
+                page_data = comic_downloader.page_data(
+                    comic_data["cid"], episode["cid"], page_num + 1
+                )
+                if page_data is None:
+                    print(
+                        f"Error when fetch data for page {page_num} episode {episode['title']} comic {c['title']}"
+                    )
+                    continue
+
+                img_data = comic_downloader.download(page_data["url"])
+                if img_data is None:
+                    print(
+                        f"Error when download page {page_num} episode {episode['title']} comic {c['title']}"
+                    )
+                    continue
+
+                page_path = episode_path / (
+                    str(page_num + 1).zfill(3) + "." + page_data["url"].split(".")[-1]
+                )
+                with page_path.open("wb") as f:
+                    f.write(img_data)
+
+
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title="subcommands", dest="subcommand")
@@ -103,56 +158,7 @@ def main():
                 print("Error when fetch comic list")
 
         elif args.action == "download_all":
-            comics = comic_downloader.list_comics()
-            if comics is None:
-                raise ValueError("Error when fetch comic list")
-
-            comic_output_path: Path = Path(args.output)
-            comic_output_path.mkdir(parents=True, exist_ok=True)
-            for c in tqdm(comics, position=0, leave=True):
-                comic_path = comic_output_path / c["title"]
-                comic_path.mkdir()
-                comic_data = comic_downloader.comic_data(c["cid"])
-                if comic_data is None:
-                    print(f"Error when fetch data for comic {c['title']}")
-                    continue
-
-                for episode in tqdm(comic_data["episodes"], position=1, leave=True):
-                    episode_path = comic_path / episode["title"]
-                    episode_path.mkdir()
-                    episode_data = comic_downloader.episode_data(
-                        comic_data["cid"], episode["cid"]
-                    )
-                    if episode_data is None:
-                        print(
-                            f"Error when fetch data for episode {episode['title']} comic {c['title']}"
-                        )
-                        continue
-
-                    for page_num in trange(
-                        len(episode_data["pageInfos"]), position=2, leave=True
-                    ):
-                        page_data = comic_downloader.page_data(
-                            comic_data["cid"], episode["cid"], page_num + 1
-                        )
-                        if page_data is None:
-                            print(
-                                f"Error when fetch data for page {page_num} episode {episode['title']} comic {c['title']}"
-                            )
-                            continue
-
-                        img_data = comic_downloader.download(page_data["url"])
-                        if img_data is None:
-                            print(
-                                f"Error when download page {page_num} episode {episode['title']} comic {c['title']}"
-                            )
-                            continue
-
-                        page_path = episode_path / (
-                            str(page_num + 1) + "." + page_data["url"].split(".")[-1]
-                        )
-                        with page_path.open("wb") as f:
-                            f.write(img_data)
+            download_comic(comic_downloader, args.output)
 
 
 if __name__ == "__main__":
