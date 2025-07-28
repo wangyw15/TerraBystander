@@ -68,6 +68,23 @@ def generate_txt(data: GameDataForBook) -> str:
                 result += line.title + "\n"
                 result += line.text + "\n"
 
+        if operator.uniequips is not None and len(operator.uniequips) > 0:
+            result += "「模组」\n"
+            for uniequip in operator.uniequips:
+                result += (
+                    "【"
+                    + uniequip.name
+                    + "（"
+                    + uniequip.type_name_1
+                    + (
+                        ("-" + uniequip.type_name_2)
+                        if uniequip.type_name_2 is not None
+                        else ""
+                    )
+                    + "）】\n"
+                )
+                result += uniequip.description + "\n"
+
         if len(operator.voices) > 0:
             result += "语音记录\n"
             for voice in operator.voices:
